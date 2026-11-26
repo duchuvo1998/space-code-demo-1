@@ -284,6 +284,7 @@ async function renderLesson(lessonId) {
   lessonFrame.className = "lesson-frame";
   lessonFrame.title = lesson.title;
   lessonFrame.src = lessonUrl;
+  lessonFrame.dataset.lessonId = lesson.id;
   lessonFrame.sandbox = "allow-scripts allow-same-origin";
   lessonFrame.referrerPolicy = "strict-origin";
   app.innerHTML = `<div class="lesson-shell">
@@ -433,9 +434,17 @@ function mergeImportedData(parsed) {
 window.addEventListener("message", event => {
   if (!lessonFrame || event.source !== lessonFrame.contentWindow) return;
   if (event.origin !== window.location.origin) return;
-  if (!isObject(event.data) || event.data.type !== "LESSON_PROGRESS") return;
+  if (!isObject(event.data)) return;
   if (typeof event.data.lessonId !== "string" || !event.data.lessonId) return;
   if (!getLessonById(event.data.lessonId)) return;
+  if (event.data.lessonId !== lessonFrame.dataset.lessonId) return;
+
+  if (event.data.type === "LESSON_RESIZE") {
+    if (!Number.isFinite(event.data.height) || event.data.height < 320 || event.data.height > 200000) return;
+    lessonFrame.style.height = `${Math.ceil(event.data.height)}px`;
+    return;
+  }
+  if (event.data.type !== "LESSON_PROGRESS") return;
   if (!isObject(event.data.data)) return;
 
   const progress = getProgress();
