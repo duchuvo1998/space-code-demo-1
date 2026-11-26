@@ -190,6 +190,7 @@ function renderSidebar() {
     <div class="nav-group-label">Tổng quan</div>
     <button type="button" class="nav-btn ${(!hash || hash.includes("/dashboard")) ? "active" : ""}" data-route="dashboard"><span>🏠 Lộ trình 8 tuần</span></button>
     <button type="button" class="nav-btn ${hash.includes("/portfolio") ? "active" : ""}" data-route="portfolio"><span>📁 Hồ sơ học tập</span><span class="pill pill-ready">${progress.portfolio.length}</span></button>
+    <a class="nav-btn nav-link" href="./ngannk.html" aria-label="Mở bản HTML ngannk"><span>📖 Bản HTML ngannk</span><span aria-hidden="true">↗</span></a>
     <div class="nav-group-label">Các tuần học</div>
   `;
   for (let weekNumber = 1; weekNumber <= 8; weekNumber++) {
