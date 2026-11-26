@@ -3,6 +3,7 @@ const WRITE_DELAY = 700;
 const CLOUD_PAYLOAD_LIMIT = 900000;
 
 let manifest = null;
+let manifestUrl = null;
 let lessonFrame = null;
 let state = loadState();
 let saveTimer = null;
@@ -255,7 +256,7 @@ function renderWeek(weekId) {
   app.querySelectorAll("[data-route]").forEach(button => button.addEventListener("click", handleSidebarRoute));
 }
 
-function renderLesson(lessonId) {
+async function renderLesson(lessonId) {
   const lesson = getLessonById(lessonId);
   if (!lesson) {
     app.innerHTML = `<div class="card"><h1>Không tìm thấy bài học</h1><p>Bài học không tồn tại trong manifest.</p><button type="button" class="btn" data-route="dashboard">Về trang chủ</button></div>`;
@@ -265,10 +266,24 @@ function renderLesson(lessonId) {
   const lessonIndex = manifest.lessons.findIndex(item => item.id === lessonId);
   const previousLesson = lessonIndex > 0 ? manifest.lessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex >= 0 && lessonIndex < manifest.lessons.length - 1 ? manifest.lessons[lessonIndex + 1] : null;
+  const courseBaseUrl = new URL("./courses/canva-gemini/", document.baseURI);
+  const lessonUrl = new URL(lesson.src, courseBaseUrl).href;
+  let lessonExists = false;
+  try {
+    const lessonResponse = await fetch(lessonUrl, { cache: "no-store" });
+    lessonExists = lessonResponse.ok;
+  } catch (error) {
+    lessonExists = false;
+  }
+  if (!lessonExists) {
+    app.innerHTML = `<div class="card"><h1>Không tìm thấy bài học</h1><p>Không thể tải: ${esc(lesson.title)}</p><button type="button" class="btn" data-route="week" data-week="w${lesson.weekNumber}">← Quay lại Tuần ${lesson.weekNumber}</button></div>`;
+    app.querySelector("[data-route]").addEventListener("click", handleSidebarRoute);
+    return;
+  }
   lessonFrame = document.createElement("iframe");
   lessonFrame.className = "lesson-frame";
   lessonFrame.title = lesson.title;
-  lessonFrame.src = new URL(`./courses/canva-gemini/${lesson.src.replace("./", "")}`, window.location.href).href;
+  lessonFrame.src = lessonUrl;
   lessonFrame.sandbox = "allow-scripts allow-same-origin";
   lessonFrame.referrerPolicy = "strict-origin";
   app.innerHTML = `<div class="lesson-shell">
@@ -448,7 +463,8 @@ window.addEventListener("message", event => {
 async function init() {
   applyTheme();
   try {
-    const response = await fetch("./courses/canva-gemini/manifest.json", { cache: "no-store" });
+    manifestUrl = new URL("./courses/canva-gemini/manifest.json", document.baseURI);
+    const response = await fetch(manifestUrl.href, { cache: "no-store" });
     if (!response.ok) throw new Error(`Không thể tải manifest (HTTP ${response.status})`);
     manifest = await response.json();
     if (!manifest.course || !Array.isArray(manifest.lessons)) throw new Error("Manifest không hợp lệ");
