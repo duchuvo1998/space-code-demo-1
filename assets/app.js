@@ -73,6 +73,9 @@ function applyTheme() {
     ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
     : theme;
   document.documentElement.dataset.theme = resolved;
+  if (lessonFrame?.contentDocument?.documentElement) {
+    lessonFrame.contentDocument.documentElement.dataset.theme = resolved;
+  }
 }
 
 function updateStorageBanner() {
@@ -149,10 +152,17 @@ function getWeekStats(weekNumber) {
   const lessons = manifest.lessons.filter(lesson => lesson.weekNumber === weekNumber);
   const progress = getProgress();
   let done = 0;
+  let started = false;
   lessons.forEach(lesson => {
-    if (progress.completedLessons.includes(lesson.id) || progress.lessonsDone[lesson.id]) done++;
+    const lessonDone = progress.completedLessons.includes(lesson.id) || progress.lessonsDone[lesson.id];
+    if (lessonDone) done++;
+    if (
+      lessonDone ||
+      (lesson.checklistIds || []).some(id => progress.checklist[id]) ||
+      (typeof progress.notes[lesson.id] === "string" && Boolean(progress.notes[lesson.id].trim()))
+    ) started = true;
   });
-  return { total: lessons.length, done, pct: lessons.length ? Math.round(done / lessons.length * 100) : 0 };
+  return { total: lessons.length, done, started, pct: lessons.length ? Math.round(done / lessons.length * 100) : 0 };
 }
 
 function getCourseStats() {
@@ -213,31 +223,47 @@ function handleSidebarRoute(event) {
 function renderDashboard() {
   const stats = getCourseStats();
   const progress = getProgress();
-  const next = manifest.lessons.find(lesson => !progress.completedLessons.includes(lesson.id) && !progress.lessonsDone[lesson.id]) || manifest.lessons[0];
+  const courseComplete = manifest.lessons.length > 0 && stats.doneLessons === stats.totalLessons;
+  const next = courseComplete ? null :
+    manifest.lessons.find(lesson => !progress.completedLessons.includes(lesson.id) && !progress.lessonsDone[lesson.id]) ||
+    manifest.lessons[0];
+  const hasStarted = manifest.lessons.some(lesson =>
+    progress.completedLessons.includes(lesson.id) ||
+    progress.lessonsDone[lesson.id] ||
+    (lesson.checklistIds || []).some(id => progress.checklist[id]) ||
+    (typeof progress.notes[lesson.id] === "string" && Boolean(progress.notes[lesson.id].trim()))
+  );
   let timeline = "";
   for (let weekNumber = 1; weekNumber <= 8; weekNumber++) {
     const weekStats = getWeekStats(weekNumber);
     const weekLessons = manifest.lessons.filter(lesson => lesson.weekNumber === weekNumber);
+    const weekStatus = weekStats.done === weekStats.total
+      ? "Đã hoàn thành"
+      : weekStats.started ? "Đang học" : "Chưa bắt đầu";
+    const weekStatusClass = weekStats.done === weekStats.total
+      ? "pill-done"
+      : weekStats.started ? "pill-ready" : "";
     timeline += `<button type="button" class="week-card" data-route="week" data-week="${weekNumber}">
-      <div class="week-card-top"><strong>Tuần ${weekNumber}</strong><span class="pill ${weekStats.done === weekStats.total ? "pill-done" : "pill-ready"}">${weekStats.done === weekStats.total ? "Đã hoàn thành" : "Đang học"}</span></div>
+      <div class="week-card-top"><strong>Tuần ${weekNumber}</strong><span class="pill ${weekStatusClass}">${weekStatus}</span></div>
       <strong style="margin-bottom:6px;">${esc(weekLessons[0]?.title || "")}</strong>
-      <div style="margin-top:auto"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)"><span>${weekStats.done}/${weekStats.total} bài</span><span>${weekStats.pct}%</span></div><div class="progress-track"><div class="progress-fill" style="width:${weekStats.pct}%"></div></div></div>
+      <div style="margin-top:auto"><div class="week-progress-label"><span>${weekStats.done}/${weekStats.total} bài</span><span>${weekStats.pct}%</span></div><div class="progress-track" role="progressbar" aria-label="Tiến độ Tuần ${weekNumber}" aria-valuenow="${weekStats.pct}" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" style="width:${weekStats.pct}%"></div></div></div>
     </button>`;
   }
   app.innerHTML = `
     <div class="card hero-card">
       <h1>${esc(manifest.course.title)}</h1>
       <p>Lộ trình thực chiến 8 tuần với 56 bài học, checklist theo ngày và hồ sơ sản phẩm.</p>
-      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;max-width:720px"><span>Tiến độ bài học</span><span>${stats.doneLessons}/${stats.totalLessons}</span></div>
-      <div class="progress-track"><div class="progress-fill" style="width:${stats.totalLessons ? stats.doneLessons / stats.totalLessons * 100 : 0}%"></div></div>
+      <div class="course-progress-label"><span>Tiến độ bài học</span><span>${stats.doneLessons}/${stats.totalLessons}</span></div>
+      <div class="progress-track" role="progressbar" aria-label="Tiến độ khóa học" aria-valuenow="${stats.totalLessons ? Math.round(stats.doneLessons / stats.totalLessons * 100) : 0}" aria-valuemin="0" aria-valuemax="100"><div class="progress-fill" style="width:${stats.totalLessons ? stats.doneLessons / stats.totalLessons * 100 : 0}%"></div></div>
     </div>
+    ${next ? `<section class="card next-lesson-card"><div><span class="eyebrow">${hasStarted ? "TIẾP TỤC HỌC" : "BẮT ĐẦU TẠI ĐÂY"}</span><h2>${hasStarted ? "Bài tiếp theo cần học" : "Bài học đầu tiên"}</h2><p>${esc(next.title)}</p></div><button type="button" class="btn btn-primary" data-route="lesson" data-id="${esc(next.id)}">${hasStarted ? "Tiếp tục học" : "Bắt đầu học"} <span aria-hidden="true">→</span></button></section>` : ""}
+    ${courseComplete ? `<section class="card next-lesson-card"><div><span class="eyebrow">HOÀN THÀNH LỘ TRÌNH</span><h2>Bạn đã hoàn thành khóa học</h2><p>Xem lại các sản phẩm và ghi chú trong hồ sơ học tập của bạn.</p></div><button type="button" class="btn btn-primary" data-route="portfolio">Mở hồ sơ học tập <span aria-hidden="true">→</span></button></section>` : ""}
     <div class="stats-grid">
       <div class="stat-box"><div class="stat-num">${stats.doneLessons}/${stats.totalLessons}</div><div class="stat-label">Bài học đã hoàn thành</div></div>
       <div class="stat-box"><div class="stat-num">${stats.doneChecks}</div><div class="stat-label">Mục checklist đã tick</div></div>
       <div class="stat-box"><div class="stat-num">8</div><div class="stat-label">Tuần học</div></div>
       <div class="stat-box"><div class="stat-num">${progress.portfolio.length}</div><div class="stat-label">Sản phẩm Hồ sơ học tập</div></div>
     </div>
-    ${next ? `<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><strong>Bài tiếp theo cần học</strong><p style="margin:6px 0 0">${esc(next.title)}</p></div><button type="button" class="btn btn-primary" data-route="lesson" data-id="${esc(next.id)}">Học ngay →</button></div>` : ""}
     <section class="card"><h2>Lộ trình 8 tuần học</h2><div class="timeline-grid">${timeline}</div></section>
   `;
   app.querySelectorAll("[data-route]").forEach(button => button.addEventListener("click", handleSidebarRoute));
@@ -264,6 +290,7 @@ async function renderLesson(lessonId) {
     return;
   }
   const lessonIndex = manifest.lessons.findIndex(item => item.id === lessonId);
+  const lessonDay = lesson.id.split("-d")[1] || "";
   const previousLesson = lessonIndex > 0 ? manifest.lessons[lessonIndex - 1] : null;
   const nextLesson = lessonIndex >= 0 && lessonIndex < manifest.lessons.length - 1 ? manifest.lessons[lessonIndex + 1] : null;
   const courseBaseUrl = new URL("./courses/canva-gemini/", document.baseURI);
@@ -290,14 +317,46 @@ async function renderLesson(lessonId) {
   app.innerHTML = `<div class="lesson-shell">
     <div class="lesson-toolbar">
       ${previousLesson ? `<button type="button" class="btn btn-sm" data-route="lesson" data-id="${esc(previousLesson.id)}">← Bài trước</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">← Tuần ${lesson.weekNumber}</button>`}
-      <div class="lesson-toolbar-title"><strong>${esc(lesson.title)}</strong><span>${previousLesson ? "Bài trước: " + esc(previousLesson.title) : "Bài đầu tiên của khóa học"}</span></div>
+      <div class="lesson-toolbar-title"><strong>${esc(lesson.title)}</strong><span>Bài ${lessonIndex + 1}/${manifest.lessons.length} · Tuần ${lesson.weekNumber}, Ngày ${lessonDay}</span></div>
+      <details class="lesson-jump-menu">
+        <summary class="btn btn-sm">Mục bài <span aria-hidden="true">⌄</span></summary>
+        <div class="lesson-jump-options">
+          <button type="button" data-lesson-jump="Hướng dẫn thực hành từng bước">Thực hành từng bước</button>
+          <button type="button" data-lesson-jump="Bài tập thực hành &amp; Sản phẩm đầu ra">Bài tập &amp; sản phẩm đầu ra</button>
+          <button type="button" data-lesson-jump="Checklist hoàn thành đo lường được">Checklist hoàn thành</button>
+        </div>
+      </details>
       ${nextLesson ? `<button type="button" class="btn btn-sm btn-primary" data-route="lesson" data-id="${esc(nextLesson.id)}">Bài tiếp theo →</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">Hoàn thành khóa học</button>`}
     </div>
   </div>`;
-  app.querySelector(".lesson-shell").appendChild(lessonFrame);
+  const lessonShell = app.querySelector(".lesson-shell");
+  lessonShell.appendChild(lessonFrame);
+  const endCard = document.createElement("section");
+  endCard.className = "card lesson-end-card";
+  endCard.innerHTML = nextLesson
+    ? `<div><span class="eyebrow">BƯỚC TIẾP THEO</span><h2>Sau khi hoàn thành bài này</h2><p>${esc(nextLesson.title)}</p></div><button type="button" class="btn btn-primary" data-route="lesson" data-id="${esc(nextLesson.id)}">Sang bài tiếp theo <span aria-hidden="true">→</span></button>`
+    : `<div><span class="eyebrow">BÀI CUỐI CÙNG</span><h2>Bạn đã đến cuối lộ trình</h2><p>Hoàn tất checklist, rồi xem lại tiến độ và sản phẩm của bạn.</p></div><button type="button" class="btn btn-primary" data-route="dashboard">Về lộ trình <span aria-hidden="true">→</span></button>`;
+  lessonShell.appendChild(endCard);
   app.querySelectorAll("[data-route]").forEach(button => button.addEventListener("click", handleSidebarRoute));
+  app.querySelectorAll("[data-lesson-jump]").forEach(button => button.addEventListener("click", () => {
+    const targetTitle = button.dataset.lessonJump;
+    const headings = [...lessonFrame.contentDocument.querySelectorAll("body > .card > h2")];
+    const targetHeading = headings.find(heading => heading.textContent.trim() === targetTitle);
+    const target = targetHeading?.closest(".card");
+    if (!target || !targetHeading) return;
+    const frameTop = lessonFrame.getBoundingClientRect().top + window.scrollY;
+    const targetTop = target.getBoundingClientRect().top;
+    const toolbarOffset = document.querySelector(".topbar").getBoundingClientRect().height +
+      app.querySelector(".lesson-toolbar").getBoundingClientRect().height + 12;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: Math.max(0, frameTop + targetTop - toolbarOffset), behavior: reduceMotion ? "auto" : "smooth" });
+    app.querySelector(".lesson-jump-menu").open = false;
+    targetHeading.tabIndex = -1;
+    targetHeading.focus({ preventScroll: true });
+  }));
   lessonFrame.addEventListener("load", () => {
     if (!lessonFrame.contentWindow) return;
+    lessonFrame.contentDocument.documentElement.dataset.theme = document.documentElement.dataset.theme;
     const progress = getProgress();
     const checklist = {};
     (lesson.checklistIds || []).forEach(id => {
@@ -391,6 +450,9 @@ function todayISO() {
 function closeMobileMenu() {
   sidebar.classList.remove("open");
   document.getElementById("drawerBackdrop").classList.remove("open");
+  const menuToggle = document.getElementById("menuToggle");
+  menuToggle.setAttribute("aria-expanded", "false");
+  menuToggle.setAttribute("aria-label", "Mở menu điều hướng");
 }
 
 function getKnownLessonIds() {
@@ -488,8 +550,11 @@ async function init() {
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
   document.getElementById("brandButton").addEventListener("click", () => { location.hash = "#course/canva-gemini/dashboard"; });
   document.getElementById("menuToggle").addEventListener("click", () => {
-    sidebar.classList.toggle("open");
-    document.getElementById("drawerBackdrop").classList.toggle("open");
+    const isOpen = sidebar.classList.toggle("open");
+    document.getElementById("drawerBackdrop").classList.toggle("open", isOpen);
+    const menuToggle = document.getElementById("menuToggle");
+    menuToggle.setAttribute("aria-expanded", String(isOpen));
+    menuToggle.setAttribute("aria-label", isOpen ? "Đóng menu điều hướng" : "Mở menu điều hướng");
   });
   document.getElementById("drawerBackdrop").addEventListener("click", closeMobileMenu);
   document.getElementById("themeButton").addEventListener("click", () => {
@@ -582,10 +647,17 @@ async function init() {
       panel = document.createElement("section");
       panel.id = "searchResults";
       panel.className = "card search-results";
+      panel.setAttribute("role", "region");
+      panel.setAttribute("aria-label", "Kết quả tìm kiếm");
+      panel.setAttribute("aria-live", "polite");
       app.prepend(panel);
     }
-    panel.innerHTML = results.length ? results.map(lesson => `<button type="button" class="search-result" data-route="lesson" data-id="${esc(lesson.id)}"><strong>${esc(lesson.title)}</strong><div style="font-size:12px;color:var(--muted)">Tuần ${lesson.weekNumber}</div></button>`).join("") : "<p>Không tìm thấy bài học hoặc thuật ngữ.</p>";
+    panel.innerHTML = results.length ? results.map(lesson => `<button type="button" class="search-result" data-route="lesson" data-id="${esc(lesson.id)}"><strong>${esc(lesson.title)}</strong><div style="font-size:12px;color:var(--muted)">Tuần ${lesson.weekNumber}</div></button>`).join("") : "<p class=\"search-empty\">Không tìm thấy bài học hoặc thuật ngữ.</p>";
     panel.querySelectorAll("[data-route]").forEach(button => button.addEventListener("click", handleSidebarRoute));
+  });
+  document.getElementById("globalSearch").addEventListener("keydown", event => {
+    if (event.key !== "Escape") return;
+    app.querySelector(".search-results")?.remove();
   });
 }
 

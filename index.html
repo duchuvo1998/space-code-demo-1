@@ -8,15 +8,16 @@
   <link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
+  <a class="skip-link" href="#mainContent">Bỏ qua điều hướng</a>
   <header class="topbar">
     <div class="topbar-left">
-      <button type="button" class="btn btn-icon menu-toggle" id="menuToggle" aria-label="Mở menu điều hướng">☰</button>
+      <button type="button" class="btn btn-icon menu-toggle" id="menuToggle" aria-label="Mở menu điều hướng" aria-controls="sidebar" aria-expanded="false">☰</button>
       <button type="button" class="brand" id="brandButton">
         <span class="brand-dot" aria-hidden="true"></span>
         <span class="brand-text">Canva + Gemini 8 Tuần</span>
       </button>
     </div>
-    <div class="topbar-search">
+    <div class="topbar-search" role="search">
       <input type="search" id="globalSearch" placeholder="Tìm bài học, thuật ngữ..." aria-label="Tìm kiếm nhanh bài học và thuật ngữ">
     </div>
     <div class="topbar-actions">
@@ -32,7 +33,7 @@
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <div class="shell">
     <aside class="sidebar" id="sidebar" aria-label="Điều hướng khóa học"></aside>
-    <main class="main">
+    <main class="main" id="mainContent" tabindex="-1">
       <div class="storage-warn" id="storageWarn" role="status">
         Trình duyệt hiện đang chặn lưu trữ cục bộ (<code>localStorage</code>). Tiến độ vẫn hiển thị trong phiên này, hãy dùng nút <strong>Xuất JSON</strong> ở góc trên để sao lưu.
       </div>
