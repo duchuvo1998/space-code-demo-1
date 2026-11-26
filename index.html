@@ -8,34 +8,50 @@
   <link rel="stylesheet" href="./assets/style.css">
 </head>
 <body>
-  <a class="skip-link" href="#mainContent">Bỏ qua điều hướng</a>
+  <a class="skip-link" href="#mainContent" data-i18n="skipNavigation">Bỏ qua điều hướng</a>
   <header class="topbar">
     <div class="topbar-left">
-      <button type="button" class="btn btn-icon menu-toggle" id="menuToggle" aria-label="Mở menu điều hướng" aria-controls="sidebar" aria-expanded="false">☰</button>
+      <button type="button" class="btn btn-icon menu-toggle" id="menuToggle" aria-label="Mở menu điều hướng" data-i18n-aria-label="openNavigation" aria-controls="sidebar" aria-expanded="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       <button type="button" class="brand" id="brandButton">
         <span class="brand-dot" aria-hidden="true"></span>
         <span class="brand-text">Canva + Gemini 8 Tuần</span>
       </button>
     </div>
     <div class="topbar-search" role="search">
-      <input type="search" id="globalSearch" placeholder="Tìm bài học, thuật ngữ..." aria-label="Tìm kiếm nhanh bài học và thuật ngữ">
+      <input type="search" id="globalSearch" placeholder="Tìm bài học, thuật ngữ..." data-i18n-placeholder="searchPlaceholder" aria-label="Tìm kiếm nhanh bài học và thuật ngữ" data-i18n-aria-label="searchLabel">
     </div>
     <div class="topbar-actions">
-      <span class="sync-status" id="syncStatus" title="Trạng thái đồng bộ">Đã lưu</span>
-      <button type="button" class="btn btn-sm" id="exportButton" title="Xuất tiến độ JSON">⬇ <span class="hide-sm">Xuất JSON</span></button>
-      <button type="button" class="btn btn-sm" id="importButton" title="Nhập tiến độ JSON">⬆ <span class="hide-sm">Nhập JSON</span></button>
-      <input type="file" id="importFileInput" accept="application/json,.json" hidden>
-      <button type="button" class="btn btn-sm" id="themeButton" aria-label="Chuyển chế độ sáng tối" title="Chuyển sáng/tối">◐</button>
-      <button type="button" class="btn btn-sm btn-danger" id="resetButton" title="Đặt lại tiến độ">↺ <span class="hide-sm">Đặt lại</span></button>
+      <span class="sync-status" id="syncStatus" title="Trạng thái đồng bộ" data-i18n-title="syncState">Lưu trên trình duyệt này</span>
+      <button type="button" class="btn btn-sm" id="accountButton" aria-label="Đăng nhập Google" title="Đăng nhập Google" hidden></button>
+      <details class="topbar-tools" id="topbarTools">
+        <summary class="btn btn-sm" title="Công cụ" data-i18n-title="toolsMenu">
+          <span data-i18n="moreTools">Thêm</span>
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="topbar-tools-panel">
+          <button type="button" class="btn btn-sm" id="exportButton" title="Xuất tiến độ JSON" data-i18n-title="exportProgress"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v4h14v-4"/></svg><span data-i18n="exportJson">Xuất JSON</span></button>
+          <button type="button" class="btn btn-sm" id="importButton" title="Nhập tiến độ JSON" data-i18n-title="importProgress"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15V3m0 0 4 4m-4-4L8 7M5 17v4h14v-4"/></svg><span data-i18n="importJson">Nhập JSON</span></button>
+          <button type="button" class="btn btn-sm" id="themeButton" aria-label="Chuyển chế độ sáng tối" data-i18n-aria-label="toggleTheme" title="Chuyển sáng/tối" data-i18n-title="toggleThemeTitle"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.9 13A9 9 0 0 1 11 3.1 9 9 0 1 0 20.9 13Z"/></svg><span data-i18n="appearance">Giao diện</span></button>
+          <div class="tools-language">
+            <span id="languageLabel" data-i18n="language">Ngôn ngữ</span>
+            <div class="language-switch" role="group" aria-label="Ngôn ngữ" data-i18n-aria-label="language" aria-labelledby="languageLabel">
+              <button type="button" class="language-option" data-locale="vi" aria-label="Tiếng Việt" aria-pressed="true">VI</button>
+              <button type="button" class="language-option" data-locale="en" aria-label="English" aria-pressed="false">EN</button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger" id="resetButton" title="Đặt lại tiến độ" data-i18n-title="resetProgress"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/></svg><span data-i18n="resetProgressLabel">Đặt lại tiến độ</span></button>
+        </div>
+      </details>
     </div>
+    <input type="file" id="importFileInput" accept="application/json,.json" hidden>
   </header>
 
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <div class="shell">
-    <aside class="sidebar" id="sidebar" aria-label="Điều hướng khóa học"></aside>
+    <aside class="sidebar" id="sidebar" aria-label="Điều hướng khóa học" data-i18n-aria-label="courseNavigation"></aside>
     <main class="main" id="mainContent" tabindex="-1">
       <div class="storage-warn" id="storageWarn" role="status">
-        Trình duyệt hiện đang chặn lưu trữ cục bộ (<code>localStorage</code>). Tiến độ vẫn hiển thị trong phiên này, hãy dùng nút <strong>Xuất JSON</strong> ở góc trên để sao lưu.
+        <span data-i18n="storageWarning">Trình duyệt hiện đang chặn lưu trữ cục bộ</span> (<code>localStorage</code>). <span data-i18n="storageWarningContinue">Tiến độ vẫn hiển thị trong phiên này, hãy dùng nút</span> <strong data-i18n="exportJson">Xuất JSON</strong> <span data-i18n="storageWarningBackup">ở góc trên để sao lưu.</span>
       </div>
       <div id="app"></div>
     </main>
@@ -43,51 +59,82 @@
 
   <div class="modal-backdrop" id="portfolioModal" role="dialog" aria-modal="true" aria-labelledby="portfolioModalTitle">
     <div class="modal">
-      <h2 id="portfolioModalTitle">Thêm sản phẩm vào Hồ sơ học tập</h2>
+      <h2 id="portfolioModalTitle" data-i18n="addPortfolioTitle">Thêm sản phẩm vào Hồ sơ học tập</h2>
       <form id="portfolioForm">
         <input type="hidden" id="pfEditId">
         <div class="form-field">
-          <label for="pfLesson">Gắn với bài học / tuần</label>
+          <label for="pfLesson" data-i18n="linkedLesson">Gắn với bài học / tuần</label>
           <select id="pfLesson" required></select>
         </div>
         <div class="form-field">
-          <label for="pfTitle">Tên sản phẩm / tài liệu *</label>
-          <input type="text" id="pfTitle" placeholder="Ví dụ: Poster Workshop Nội bộ V2 (1080×1080)" required>
+          <label for="pfTitle" data-i18n="portfolioItemName">Tên sản phẩm / tài liệu *</label>
+          <input type="text" id="pfTitle" placeholder="Ví dụ: Poster Workshop nội bộ phiên bản 2 (1080×1080)" data-i18n-placeholder="portfolioItemPlaceholder" required>
         </div>
         <div class="form-field">
-          <label for="pfLink">Đường dẫn (Canva, Google Drive, Notion...)</label>
+          <label for="pfLink" data-i18n="portfolioLink">Đường dẫn (Canva, Google Drive, Notion...)</label>
           <input type="url" id="pfLink" placeholder="https://www.canva.com/design/...">
         </div>
         <div class="form-field">
-          <label for="pfDate">Ngày thực hiện</label>
+          <label for="pfDate" data-i18n="portfolioDate">Ngày thực hiện</label>
           <input type="date" id="pfDate" required>
         </div>
         <div class="form-field">
-          <label for="pfNote">Ghi chú (những gì đã làm, lỗi đã sửa, kinh nghiệm rút ra)</label>
-          <textarea id="pfNote" rows="3" placeholder="Ví dụ: Đã tách lớp từ PPTX xuất từ Gemini, sửa 2 lỗi lệch lề theo QA..."></textarea>
+          <label for="pfNote" data-i18n="portfolioNote">Ghi chú (những gì đã làm, lỗi đã sửa, kinh nghiệm rút ra)</label>
+          <textarea id="pfNote" rows="3" placeholder="Ví dụ: Đã tách lớp từ PPTX xuất từ Gemini, sửa 2 lỗi lệch lề theo QA..." data-i18n-placeholder="portfolioNotePlaceholder"></textarea>
         </div>
-        <p class="form-note">Lưu ý: Web tĩnh không lưu tệp ảnh/PDF đính kèm trực tiếp; hãy dán link Canva hoặc Google Drive để truy cập bền vững trên mọi thiết bị.</p>
+        <p class="form-note" data-i18n="portfolioAttachmentNote">Lưu ý: Trang web không lưu tệp ảnh/PDF đính kèm trực tiếp; hãy dán liên kết Canva hoặc Google Drive để truy cập trên mọi thiết bị.</p>
         <div class="modal-actions">
-          <button type="button" class="btn" id="cancelPortfolio">Hủy</button>
-          <button type="submit" class="btn btn-primary">Lưu sản phẩm</button>
+          <button type="button" class="btn" id="cancelPortfolio" data-i18n="cancel">Hủy</button>
+          <button type="submit" class="btn btn-primary" data-i18n="savePortfolio">Lưu sản phẩm</button>
         </div>
       </form>
     </div>
   </div>
 
+  <div class="modal-backdrop" id="welcomeModal" role="dialog" aria-modal="true" aria-labelledby="welcomeModalTitle" aria-describedby="welcomeModalDescription" tabindex="-1">
+    <div class="modal welcome-modal">
+      <button type="button" class="btn btn-icon welcome-close" id="welcomeCloseButton" aria-label="Đóng mà chưa chọn" data-i18n-aria-label="closeWithoutChoice" title="Đóng" data-i18n-title="close">
+        <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+      <h2 id="welcomeModalTitle" data-i18n="welcomeTitle">Chào mừng bạn đến với khóa học</h2>
+      <p id="welcomeModalDescription" data-i18n="welcomeDescription">Đăng nhập Google để đồng bộ tiến độ trên đám mây giữa các thiết bị. Nếu không đăng nhập, tiến độ chỉ lưu trên trình duyệt này.</p>
+      <div class="welcome-choice-list">
+        <button type="button" class="welcome-choice welcome-choice-primary" id="welcomeLoginButton" hidden>
+          <span class="welcome-choice-title" data-i18n="signInGoogle">Đăng nhập bằng Google</span>
+          <span class="welcome-choice-description" data-i18n="signInDescription">Đồng bộ tiến độ trên đám mây để tiếp tục học trên các thiết bị.</span>
+        </button>
+        <button type="button" class="welcome-choice" id="welcomeContinueButton">
+          <span class="welcome-choice-title" data-i18n="continueInBrowser">Tiếp tục không cần đăng nhập</span>
+          <span class="welcome-choice-description" data-i18n="continueDescription">Tiến độ chỉ lưu trên trình duyệt này. Bạn có thể đăng nhập sau để đồng bộ.</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="cloudOverwriteModal" role="dialog" aria-modal="true" aria-labelledby="cloudOverwriteTitle" aria-describedby="cloudOverwriteDescription" tabindex="-1">
+    <div class="modal cloud-overwrite-modal">
+      <h2 id="cloudOverwriteTitle" data-i18n="overwriteTitle">Thay thế tiến độ trên Google?</h2>
+      <p id="cloudOverwriteDescription" data-i18n="overwriteDescription">Tài khoản Google này đã có tiến độ học. Nếu tiếp tục, toàn bộ tiến độ trên Google sẽ được thay bằng tiến độ trên trình duyệt này; dữ liệu Google hiện tại sẽ không được gộp và sẽ bị thay thế. Bản lưu trên trình duyệt này vẫn được giữ nguyên. Hủy để giữ nguyên dữ liệu trên Google và không đồng bộ.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-cloud-overwrite-choice="cancel" data-i18n="cancelSignIn">Hủy đăng nhập</button>
+        <button type="button" class="btn btn-danger" data-cloud-overwrite-choice="replace" data-i18n="overwriteGoogle">Ghi đè tiến độ Google</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-backdrop" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
     <div class="modal">
-      <h2 id="resetModalTitle">Đặt lại toàn bộ tiến độ?</h2>
-      <p>Thao tác này sẽ xóa toàn bộ mục checklist đã đánh dấu, trạng thái hoàn thành bài học, ghi chú cá nhân và Hồ sơ học tập trên trình duyệt này. Bạn nên <strong>Xuất JSON</strong> sao lưu trước khi đặt lại.</p>
+      <h2 id="resetModalTitle" data-i18n="resetTitle">Đặt lại toàn bộ tiến độ?</h2>
+      <p><span data-i18n="resetDescription">Thao tác này sẽ xóa toàn bộ mục checklist đã đánh dấu, trạng thái hoàn thành bài học, ghi chú cá nhân và Hồ sơ học tập trên trình duyệt này; nếu đã đăng nhập Google, tiến độ trên tài khoản đó cũng sẽ được đặt lại. Bạn nên</span> <strong data-i18n="exportJson">Xuất JSON</strong> <span data-i18n="resetBackupSuggestion">để sao lưu trước khi đặt lại.</span></p>
       <div class="modal-actions">
-        <button type="button" class="btn" id="cancelReset">Hủy</button>
-        <button type="button" class="btn btn-danger" id="confirmReset">Xác nhận đặt lại</button>
+        <button type="button" class="btn" id="cancelReset" data-i18n="cancel">Hủy</button>
+        <button type="button" class="btn btn-danger" id="confirmReset" data-i18n="confirmReset">Xác nhận đặt lại</button>
       </div>
     </div>
   </div>
 
   <div class="save-status" id="saveStatus" role="status" aria-live="polite"></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./assets/app.js"></script>
+  <script type="module" src="./assets/app/app.js"></script>
 </body>
 </html>

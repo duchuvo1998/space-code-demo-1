@@ -1,0 +1,17 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId}/course/progress {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['schemaVersion', 'progress', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['schemaVersion', 'progress', 'updatedAt'])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.progress is map
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+  }
+}
