@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Canva + Gemini 8 Tuần</title>
+  <link rel="stylesheet" href="./assets/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <button type="button" class="btn btn-icon menu-toggle" id="menuToggle" aria-label="Mở menu điều hướng">☰</button>
+      <button type="button" class="brand" id="brandButton">
+        <span class="brand-dot" aria-hidden="true"></span>
+        <span class="brand-text">Canva + Gemini 8 Tuần</span>
+      </button>
+    </div>
+    <div class="topbar-search">
+      <input type="search" id="globalSearch" placeholder="Tìm bài học, thuật ngữ..." aria-label="Tìm kiếm nhanh bài học và thuật ngữ">
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="btn btn-sm" id="exportButton" title="Xuất tiến độ JSON">⬇ <span class="hide-sm">Xuất JSON</span></button>
+      <button type="button" class="btn btn-sm" id="importButton" title="Nhập tiến độ JSON">⬆ <span class="hide-sm">Nhập JSON</span></button>
+      <input type="file" id="importFileInput" accept="application/json,.json" hidden>
+      <button type="button" class="btn btn-sm" id="themeButton" aria-label="Chuyển chế độ sáng tối" title="Chuyển sáng/tối">◐</button>
+      <button type="button" class="btn btn-sm btn-danger" id="resetButton" title="Đặt lại tiến độ">↺ <span class="hide-sm">Đặt lại</span></button>
+    </div>
+  </header>
+
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar" aria-label="Điều hướng khóa học"></aside>
+    <main class="main">
+      <div class="storage-warn" id="storageWarn" role="status">
+        Trình duyệt hiện đang chặn lưu trữ cục bộ (<code>localStorage</code>). Tiến độ vẫn hiển thị trong phiên này, hãy dùng nút <strong>Xuất JSON</strong> ở góc trên để sao lưu.
+      </div>
+      <div id="app"></div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="portfolioModal" role="dialog" aria-modal="true" aria-labelledby="portfolioModalTitle">
+    <div class="modal">
+      <h2 id="portfolioModalTitle">Thêm sản phẩm vào Hồ sơ học tập</h2>
+      <form id="portfolioForm">
+        <input type="hidden" id="pfEditId">
+        <div class="form-field">
+          <label for="pfLesson">Gắn với bài học / tuần</label>
+          <select id="pfLesson" required></select>
+        </div>
+        <div class="form-field">
+          <label for="pfTitle">Tên sản phẩm / tài liệu *</label>
+          <input type="text" id="pfTitle" placeholder="Ví dụ: Poster Workshop Nội bộ V2 (1080×1080)" required>
+        </div>
+        <div class="form-field">
+          <label for="pfLink">Đường dẫn (Canva, Google Drive, Notion...)</label>
+          <input type="url" id="pfLink" placeholder="https://www.canva.com/design/...">
+        </div>
+        <div class="form-field">
+          <label for="pfDate">Ngày thực hiện</label>
+          <input type="date" id="pfDate" required>
+        </div>
+        <div class="form-field">
+          <label for="pfNote">Ghi chú (những gì đã làm, lỗi đã sửa, kinh nghiệm rút ra)</label>
+          <textarea id="pfNote" rows="3" placeholder="Ví dụ: Đã tách lớp từ PPTX xuất từ Gemini, sửa 2 lỗi lệch lề theo QA..."></textarea>
+        </div>
+        <p class="form-note">Lưu ý: Web tĩnh không lưu tệp ảnh/PDF đính kèm trực tiếp; hãy dán link Canva hoặc Google Drive để truy cập bền vững trên mọi thiết bị.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="cancelPortfolio">Hủy</button>
+          <button type="submit" class="btn btn-primary">Lưu sản phẩm</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+    <div class="modal">
+      <h2 id="resetModalTitle">Đặt lại toàn bộ tiến độ?</h2>
+      <p>Thao tác này sẽ xóa toàn bộ mục checklist đã đánh dấu, trạng thái hoàn thành bài học, ghi chú cá nhân và Hồ sơ học tập trên trình duyệt này. Bạn nên <strong>Xuất JSON</strong> sao lưu trước khi đặt lại.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="cancelReset">Hủy</button>
+        <button type="button" class="btn btn-danger" id="confirmReset">Xác nhận đặt lại</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="save-status" id="saveStatus" role="status" aria-live="polite"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./assets/app.js"></script>
+</body>
+</html>

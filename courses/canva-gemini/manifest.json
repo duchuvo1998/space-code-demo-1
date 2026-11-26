@@ -1,0 +1,1068 @@
+{
+  "course": {
+    "id": "canva-gemini",
+    "title": "Khóa học Canva + Gemini 8 Tuần cho Người làm Truyền thông",
+    "defaultLessonId": "w1-d1"
+  },
+  "lessons": [
+    {
+      "id": "w1-d1",
+      "weekId": "w1",
+      "weekNumber": 1,
+      "moduleId": "m1",
+      "title": "Ngày 1: Bản đồ Canva Visual Suite Đa định dạng & Cây thư mục Truyền thông",
+      "src": "./lessons/w1-d1.html",
+      "searchTerms": [
+        "Visual Suite",
+        "Multi-format Design",
+        "Creative Brief",
+        "CTA (Call To Action)",
+        "1080×1080 px"
+      ],
+      "checklistIds": [
+        "w1-d1-c1",
+        "w1-d1-c2",
+        "w1-d1-c3"
+      ]
+    },
+    {
+      "id": "w1-d2",
+      "weekId": "w1",
+      "weekNumber": 1,
+      "moduleId": "m1",
+      "title": "Ngày 2: Làm chủ Layers, Guides, 8 Phím tắt cốt lõi & Canva Offline đa thiết bị",
+      "src": "./lessons/w1-d2.html",
+      "searchTerms": [
+        "Layer (Lớp xếp chồng)",
+        "Rulers & Guides (Thước đo & Đường dẫn)",
+        "Tidy Up (Dàn đều tự động)",
+        "Safe Margin (Lề an toàn)"
+      ],
+      "checklistIds": [
+        "w1-d2-c1",
+        "w1-d2-c2",
+        "w1-d2-c3"
+      ]
+    },
+    {
+      "id": "w1-d3",
+      "weekId": "w1",
+      "weekNumber": 1,
+      "moduleId": "m1",
+      "title": "Ngày 3: Cài đặt Gemini Desktop & Kích hoạt @Canva Tìm kiếm, Tóm tắt Dự án",
+      "src": "./lessons/w1-d3.html",
+      "searchTerms": [
+        "Connected Apps (Ứng dụng đã kết nối)",
+        "Cú pháp @Canva",
+        "PWA (Progressive Web App)",
+        "Quyền chỉ đọc / Tra cứu (Read & Summarize Scope)"
+      ],
+      "checklistIds": [
+        "w1-d3-c1",
+        "w1-d3-c2",
+        "w1-d3-c3"
+      ]
+    },
+    {
+      "id": "w1-d4",
+      "weekId": "w1",
+      "weekNumber": 1,
+      "moduleId": "m2",
+      "title": "Ngày 4: 4 Luồng Gemini → Canva & Thực chiến Luồng PPTX/Google Slides Tách lớp",
+      "src": "./lessons/w1-d4.html",
+      "searchTerms": [
+        "Tách lớp độc lập (Editable Layers)",
+        "Tệp .pptx (PowerPoint Open XML)",
+        "Ảnh phẳng (Flattened Image / Raster)",
+        "Carousel (Bài đăng chuỗi nhiều trang)"
+      ],
+      "checklistIds": [
+        "w1-d4-c1",
+        "w1-d4-c2",
+        "w1-d4-c3"
+      ]
+    },
+    {
+      "id": "w1-d5",
+      "weekId": "w1",
+      "weekNumber": 1,
+      "moduleId": "m2",
+      "title": "Ngày 5: Thực chiến Luồng Vector SVG từ Gemini Canvas → Đổi màu trực tiếp trên Canva",
+      "src": "./lessons/w1-d5.html",
+      "searchTerms": [
+        "SVG (Scalable Vector Graphics)",
+        "Solid Color (Màu phẳng)",
+        "viewBox",
+        "Gemini Canvas"
+      ],
+      "checklistIds": [
+        "w1-d5-c1",
+        "w1-d5-c2",
+        "w1-d5-c3"
+      ]
+    },
+    {
+      "id": "w1-d6",
+      "weekId": "w1",
+      "weekNumber": 1,
+      "moduleId": "m2",
+      "title": "Ngày 6: Kết hợp Canva AI 2.0 & Quy trình Kiểm định Thị giác (Visual QA) với Gemini",
+      "src": "./lessons/w1-d6.html",
+      "searchTerms": [
+        "Visual QA (Kiểm định Thị giác)",
+        "Visual Hierarchy (Phân cấp Thị giác)",
+        "Contrast (Độ tương phản)",
+        "CTA (Call to Action – Kêu gọi hành động)"
+      ],
+      "checklistIds": [
+        "w1-d6-c1",
+        "w1-d6-c2",
+        "w1-d6-c3"
+      ]
+    },
+    {
+      "id": "w1-d7",
+      "weekId": "w1",
+      "weekNumber": 1,
+      "moduleId": "m2",
+      "title": "Ngày 7: Tổng kết Tuần 1, Nghiệm thu Tiêu chí M1–M2 & Lưu Hồ sơ Học tập",
+      "src": "./lessons/w1-d7.html",
+      "searchTerms": [
+        "Nghiệm thu M1–M2 (Module Sign-off)",
+        "Case Study V1 → V2",
+        "Tệp JSON sao lưu (.json Backup)",
+        "localStorage (Bộ nhớ cục bộ trình duyệt)"
+      ],
+      "checklistIds": [
+        "w1-d7-c1",
+        "w1-d7-c2",
+        "w1-d7-c3"
+      ]
+    },
+    {
+      "id": "w2-d1",
+      "weekId": "w2",
+      "weekNumber": 2,
+      "moduleId": "m3",
+      "title": "Ngày 1: 4 Quy luật CRAP, Lưới 12 cột & Sơ đồ Chiến dịch trên Canva Whiteboards",
+      "src": "./lessons/w2-d1.html",
+      "searchTerms": [
+        "CRAP (Contrast, Repetition, Alignment, Proximity)",
+        "Lưới 12 cột (12-Column Grid)",
+        "Khoảng trắng (Whitespace / Negative Space)",
+        "Sticky Notes & Back to content"
+      ],
+      "checklistIds": [
+        "w2-d1-c1",
+        "w2-d1-c2",
+        "w2-d1-c3"
+      ]
+    },
+    {
+      "id": "w2-d2",
+      "weekId": "w2",
+      "weekNumber": 2,
+      "moduleId": "m3",
+      "title": "Ngày 2: Phân cấp Thị giác (Z/F), Căn lề chuẩn 0 px & Dựng Lịch trình 5 mục",
+      "src": "./lessons/w2-d2.html",
+      "searchTerms": [
+        "Phân cấp thị giác (Visual Hierarchy)",
+        "Tidy Up (Dọn dẹp)",
+        "Safe Zone (Vùng an toàn)",
+        "Tọa độ X / Y (Position Advanced)"
+      ],
+      "checklistIds": [
+        "w2-d2-c1",
+        "w2-d2-c2",
+        "w2-d2-c3"
+      ]
+    },
+    {
+      "id": "w2-d3",
+      "weekId": "w2",
+      "weekNumber": 2,
+      "moduleId": "m3",
+      "title": "Ngày 3: [Bài tập Nguyên lý × Gemini & Canva] Đặc tả Wireframe & Dựng Carousel LinkedIn 4 trang",
+      "src": "./lessons/w2-d3.html",
+      "searchTerms": [
+        "Wireframe HTML (Khung dây HTML)",
+        "Gemini Canvas",
+        "Visual QA (Kiểm định Chất lượng Thị giác)",
+        "Placeholder Slot (Ô giữ chỗ)"
+      ],
+      "checklistIds": [
+        "w2-d3-c1",
+        "w2-d3-c2",
+        "w2-d3-c3"
+      ]
+    },
+    {
+      "id": "w2-d4",
+      "weekId": "w2",
+      "weekNumber": 2,
+      "moduleId": "m4",
+      "title": "Ngày 4: Khai thác Kho Elements Edu, Bộ lọc Nâng cao, Frames & Grids",
+      "src": "./lessons/w2-d4.html",
+      "searchTerms": [
+        "Cutout (Ảnh tách nền)",
+        "Border weight (Độ dày đường viền)",
+        "Frames (Khung hình)",
+        "Grids (Lưới ảnh)"
+      ],
+      "checklistIds": [
+        "w2-d4-c1",
+        "w2-d4-c2",
+        "w2-d4-c3"
+      ]
+    },
+    {
+      "id": "w2-d5",
+      "weekId": "w2",
+      "weekNumber": 2,
+      "moduleId": "m4",
+      "title": "Ngày 5: Vẽ Bộ 5 Icon Đồng bộ Nét (Stroke 2 px) bằng Mã SVG trong Gemini Canvas",
+      "src": "./lessons/w2-d5.html",
+      "searchTerms": [
+        "SVG (Scalable Vector Graphics)",
+        "viewBox=\"0 0 48 48\"",
+        "stroke-width, stroke-linecap, stroke-linejoin",
+        "Inline Hex Color (Mã màu Hex trực tiếp)"
+      ],
+      "checklistIds": [
+        "w2-d5-c1",
+        "w2-d5-c2",
+        "w2-d5-c3"
+      ]
+    },
+    {
+      "id": "w2-d6",
+      "weekId": "w2",
+      "weekNumber": 2,
+      "moduleId": "m4",
+      "title": "Ngày 6: Vẽ Huy hiệu (Badge) SVG & Lắp ghép Hoàn thiện Bộ Carousel 4 trang",
+      "src": "./lessons/w2-d6.html",
+      "searchTerms": [
+        "Event Badge SVG (Huy hiệu Sự kiện SVG)",
+        "Icon Container (Hộp chứa Icon)",
+        "PDF Standard (LinkedIn Carousel Format)"
+      ],
+      "checklistIds": [
+        "w2-d6-c1",
+        "w2-d6-c2",
+        "w2-d6-c3"
+      ]
+    },
+    {
+      "id": "w2-d7",
+      "weekId": "w2",
+      "weekNumber": 2,
+      "moduleId": "m4",
+      "title": "Ngày 7: Tổng kết Tuần 2, Nghiệm thu Tiêu chí M3–M4 & Cập nhật Hồ sơ Học tập",
+      "src": "./lessons/w2-d7.html",
+      "searchTerms": [
+        "Nghiệm thu định lượng (Criteria-Based QA)",
+        "Case Study (Hồ sơ tình huống)",
+        "Asset System (Hệ thống Tài sản tái sử dụng)"
+      ],
+      "checklistIds": [
+        "w2-d7-c1",
+        "w2-d7-c2",
+        "w2-d7-c3"
+      ]
+    },
+    {
+      "id": "w3-d1",
+      "weekId": "w3",
+      "weekNumber": 3,
+      "moduleId": "m5",
+      "title": "Ngày 1: Nguyên lý Typography, Phông tiếng Việt & Tải Phông vào Brand Kit",
+      "src": "./lessons/w3-d1.html",
+      "searchTerms": [
+        "Typography (Nghệ thuật chữ)",
+        "Type Scale (Thang tỷ lệ cỡ chữ)",
+        "Leading (Giãn dòng)",
+        "Từ mồ côi (Orphan / Widow)"
+      ],
+      "checklistIds": [
+        "w3-d1-c1",
+        "w3-d1-c2",
+        "w3-d1-c3"
+      ]
+    },
+    {
+      "id": "w3-d2",
+      "weekId": "w3",
+      "weekNumber": 3,
+      "moduleId": "m5",
+      "title": "Ngày 2: Thiết kế Quote Card & Bản tin Chữ thuần + Thực chiến Canva AI 2.0",
+      "src": "./lessons/w3-d2.html",
+      "searchTerms": [
+        "Canva AI 2.0",
+        "Copywriting / Rút gọn copy",
+        "Chunking (Chia nhỏ khối thông tin)",
+        "Typographic Design (Thiết kế thuần chữ)"
+      ],
+      "checklistIds": [
+        "w3-d2-c1",
+        "w3-d2-c2",
+        "w3-d2-c3"
+      ]
+    },
+    {
+      "id": "w3-d3",
+      "weekId": "w3",
+      "weekNumber": 3,
+      "moduleId": "m5",
+      "title": "Ngày 3: [Bài tập Nguyên lý × Gemini & Canva] Song song 2 Phương án Typography & Chấm điểm Di động",
+      "src": "./lessons/w3-d3.html",
+      "searchTerms": [
+        "Typographic Voice (Giọng điệu chữ)",
+        "Type Spec (Bảng đặc tả kiểu chữ)",
+        "Mobile Readability (Độ dễ đọc trên di động)",
+        "Weight Contrast (Tương phản độ dày)"
+      ],
+      "checklistIds": [
+        "w3-d3-c1",
+        "w3-d3-c2",
+        "w3-d3-c3"
+      ]
+    },
+    {
+      "id": "w3-d4",
+      "weekId": "w3",
+      "weekNumber": 3,
+      "moduleId": "m6",
+      "title": "Ngày 4: Bánh xe Màu, Quy tắc 60–30–10 & Tương phản WCAG AA",
+      "src": "./lessons/w3-d4.html",
+      "searchTerms": [
+        "Mã Hex (Hexadecimal Color Code)",
+        "Quy tắc 60–30–10",
+        "WCAG AA",
+        "Eyedropper (Ống hút màu)"
+      ],
+      "checklistIds": [
+        "w3-d4-c1",
+        "w3-d4-c2",
+        "w3-d4-c3"
+      ]
+    },
+    {
+      "id": "w3-d5",
+      "weekId": "w3",
+      "weekNumber": 3,
+      "moduleId": "m6",
+      "title": "Ngày 5: Thiết kế Banner Light & Dark + Thay thế Style Match bằng Nano Banana 2",
+      "src": "./lessons/w3-d5.html",
+      "searchTerms": [
+        "Scrim / Gradient Overlay",
+        "Duotone (Hiệu ứng hai tông màu)",
+        "Nano Banana 2",
+        "Light Mode / Dark Mode Banner"
+      ],
+      "checklistIds": [
+        "w3-d5-c1",
+        "w3-d5-c2",
+        "w3-d5-c3"
+      ]
+    },
+    {
+      "id": "w3-d6",
+      "weekId": "w3",
+      "weekNumber": 3,
+      "moduleId": "m6",
+      "title": "Ngày 6: [Bài tập Nguyên lý × Gemini & Canva] Thẻ Bảng màu SVG 60–30–10 & Kiểm định Tương phản WCAG",
+      "src": "./lessons/w3-d6.html",
+      "searchTerms": [
+        "SVG (Scalable Vector Graphics)",
+        "Color Swatch (Ô mẫu màu)",
+        "QA (Quality Assurance — Kiểm định chất lượng)",
+        "Ma trận tương phản (Contrast Matrix)"
+      ],
+      "checklistIds": [
+        "w3-d6-c1",
+        "w3-d6-c2",
+        "w3-d6-c3"
+      ]
+    },
+    {
+      "id": "w3-d7",
+      "weekId": "w3",
+      "weekNumber": 3,
+      "moduleId": "m6",
+      "title": "Ngày 7: Tổng kết Tuần 3, Nghiệm thu Typography & Màu sắc + Lưu Hồ sơ Học tập",
+      "src": "./lessons/w3-d7.html",
+      "searchTerms": [
+        "Overview Board (Bảng tổng quan nghiệm thu)",
+        "Learning Portfolio (Hồ sơ Học tập)",
+        "Tiêu chí nghiệm thu (Acceptance Criteria)"
+      ],
+      "checklistIds": [
+        "w3-d7-c1",
+        "w3-d7-c2",
+        "w3-d7-c3"
+      ]
+    },
+    {
+      "id": "w4-d1",
+      "weekId": "w4",
+      "weekNumber": 4,
+      "moduleId": "m7",
+      "title": "Ngày 1: Bố cục Ảnh, Chỉnh đồng màu 3 Ảnh Sự kiện & Xóa vật thể bằng Magic Eraser",
+      "src": "./lessons/w4-d1.html",
+      "searchTerms": [
+        "Crop (Cắt khung hình)",
+        "Temperature (Nhiệt màu)",
+        "Negative Space (Không gian âm)",
+        "Magic Eraser"
+      ],
+      "checklistIds": [
+        "w4-d1-c1",
+        "w4-d1-c2",
+        "w4-d1-c3"
+      ]
+    },
+    {
+      "id": "w4-d2",
+      "weekId": "w4",
+      "weekNumber": 4,
+      "moduleId": "m7",
+      "title": "Ngày 2: Xóa nền (Background Remover), Đổ bóng 3 lớp & Magic Media / Dream Lab",
+      "src": "./lessons/w4-d2.html",
+      "searchTerms": [
+        "Background Remover (BG Remover)",
+        "Foreground – Midground – Background",
+        "Viền răng cưa / Viền trắng (Halo)",
+        "Magic Media / Dream Lab"
+      ],
+      "checklistIds": [
+        "w4-d2-c1",
+        "w4-d2-c2",
+        "w4-d2-c3"
+      ]
+    },
+    {
+      "id": "w4-d3",
+      "weekId": "w4",
+      "weekNumber": 4,
+      "moduleId": "m7",
+      "title": "Ngày 3: [Bài tập Nguyên lý × Gemini & Canva] Ghép Key Visual với Nano Banana 2 & QA Ánh sáng",
+      "src": "./lessons/w4-d3.html",
+      "searchTerms": [
+        "Key Visual (KV)",
+        "Nano Banana 2",
+        "QA (Quality Assurance)",
+        "Tỷ lệ tương phản 4.5:1 (Contrast Ratio)"
+      ],
+      "checklistIds": [
+        "w4-d3-c1",
+        "w4-d3-c2",
+        "w4-d3-c3"
+      ]
+    },
+    {
+      "id": "w4-d4",
+      "weekId": "w4",
+      "weekNumber": 4,
+      "moduleId": "m8",
+      "title": "Ngày 4: Khai thác Canva Apps (QR Code, TypeCraft, Duotone) & Họa tiết Brand Pattern SVG",
+      "src": "./lessons/w4-d4.html",
+      "searchTerms": [
+        "Quiet Zone (Vùng đệm tĩnh)",
+        "SVG (Scalable Vector Graphics)",
+        "TypeCraft",
+        "Duotone"
+      ],
+      "checklistIds": [
+        "w4-d4-c1",
+        "w4-d4-c2",
+        "w4-d4-c3"
+      ]
+    },
+    {
+      "id": "w4-d5",
+      "weekId": "w4",
+      "weekNumber": 4,
+      "moduleId": "m8",
+      "title": "Ngày 5: Thiết kế Bộ 3 Vật phẩm Sự kiện (Thẻ đeo, Áo/Túi tote, Standee)",
+      "src": "./lessons/w4-d5.html",
+      "searchTerms": [
+        "Transparent Background (Nền trong suốt)",
+        "Vùng đục lỗ thẻ đeo (Lanyard Punch Zone)",
+        "Standee (Kệ chữ X / Roll-up Banner)",
+        "Tầm mắt (Eye-Level Zone)"
+      ],
+      "checklistIds": [
+        "w4-d5-c1",
+        "w4-d5-c2",
+        "w4-d5-c3"
+      ]
+    },
+    {
+      "id": "w4-d6",
+      "weekId": "w4",
+      "weekNumber": 4,
+      "moduleId": "m8",
+      "title": "Ngày 6: Trình bày 3 Mockups Chân thực trên Canva & Phân ranh Canva vs. Affinity",
+      "src": "./lessons/w4-d6.html",
+      "searchTerms": [
+        "Mockup (Ảnh mô phỏng sản phẩm)",
+        "Affinity (Designer / Photo / Publisher)",
+        "Hệ màu RGB vs. CMYK",
+        "Vùng in an toàn (Safe Print Area)"
+      ],
+      "checklistIds": [
+        "w4-d6-c1",
+        "w4-d6-c2",
+        "w4-d6-c3"
+      ]
+    },
+    {
+      "id": "w4-d7",
+      "weekId": "w4",
+      "weekNumber": 4,
+      "moduleId": "m8",
+      "title": "Ngày 7: Tổng kết Giai đoạn 1 (Tuần 1–4), Nghiệm thu M7–M8 & Lưu Hồ sơ Học tập",
+      "src": "./lessons/w4-d7.html",
+      "searchTerms": [
+        "Nghiệm thu (Sign-off / Acceptance Review)",
+        "Hồ sơ Học tập (Learning Portfolio)",
+        "Before / After Showcase",
+        "PDF Standard"
+      ],
+      "checklistIds": [
+        "w4-d7-c1",
+        "w4-d7-c2",
+        "w4-d7-c3"
+      ]
+    },
+    {
+      "id": "w5-d1",
+      "weekId": "w5",
+      "weekNumber": 5,
+      "moduleId": "m9",
+      "title": "Ngày 1: Xây dựng Brand Kit Toàn diện trên Canva (Logo, Màu, Phông, Brand Video)",
+      "src": "./lessons/w5-d1.html",
+      "searchTerms": [
+        "Brand Kit",
+        "Mã màu Hex",
+        "SVG (Scalable Vector Graphics)",
+        "Lock (Khóa lớp) & Brand Template"
+      ],
+      "checklistIds": [
+        "w5-d1-c1",
+        "w5-d1-c2",
+        "w5-d1-c3"
+      ]
+    },
+    {
+      "id": "w5-d2",
+      "weekId": "w5",
+      "weekNumber": 5,
+      "moduleId": "m9",
+      "title": "Ngày 2: Xây dựng Gemini Gem Chuẩn Thương hiệu & Kết nối @Google Drive",
+      "src": "./lessons/w5-d2.html",
+      "searchTerms": [
+        "Gemini Gem",
+        "Design Tokens",
+        "Brand Voice",
+        "Few-shot Examples"
+      ],
+      "checklistIds": [
+        "w5-d2-c1",
+        "w5-d2-c2",
+        "w5-d2-c3"
+      ]
+    },
+    {
+      "id": "w5-d3",
+      "weekId": "w5",
+      "weekNumber": 5,
+      "moduleId": "m9",
+      "title": "Ngày 3: Quy trình Gem → PPTX/SVG → Canva Brand Kit & @Canva Rà soát Dự án",
+      "src": "./lessons/w5-d3.html",
+      "searchTerms": [
+        "Import PPTX (Nhập tệp trình chiếu)",
+        "Mã nguồn SVG (SVG Code)",
+        "Apply to all pages",
+        "Tiện ích @Canva"
+      ],
+      "checklistIds": [
+        "w5-d3-c1",
+        "w5-d3-c2",
+        "w5-d3-c3"
+      ]
+    },
+    {
+      "id": "w5-d4",
+      "weekId": "w5",
+      "weekNumber": 5,
+      "moduleId": "m10",
+      "title": "Ngày 4: Nhân bản Đa kênh (Magic Resize + @Canva Resize) & Thay thế AI Post Writer",
+      "src": "./lessons/w5-d4.html",
+      "searchTerms": [
+        "Master Design (Thiết kế gốc)",
+        "Magic Resize / Magic Switch",
+        "Safe Zone (Vùng an toàn)",
+        "Multimodal Prompting (Lệnh đa phương thức)"
+      ],
+      "checklistIds": [
+        "w5-d4-c1",
+        "w5-d4-c2",
+        "w5-d4-c3"
+      ]
+    },
+    {
+      "id": "w5-d5",
+      "weekId": "w5",
+      "weekNumber": 5,
+      "moduleId": "m10",
+      "title": "Ngày 5: Chuẩn bị Dữ liệu trên Canva Sheets & Chạy Bulk Create 10 Thẻ Nhân vật trong ≤ 20 phút",
+      "src": "./lessons/w5-d5.html",
+      "searchTerms": [
+        "Canva Sheets",
+        "Bulk Create",
+        "Connect Data (Kết nối dữ liệu)",
+        "Stress-test độ dài văn bản"
+      ],
+      "checklistIds": [
+        "w5-d5-c1",
+        "w5-d5-c2",
+        "w5-d5-c3"
+      ]
+    },
+    {
+      "id": "w5-d6",
+      "weekId": "w5",
+      "weekNumber": 5,
+      "moduleId": "m10",
+      "title": "Ngày 6: Gắn Ảnh Chân dung Hàng loạt, Tinh chỉnh 10 Thẻ & Kiểm định QA Đồng bộ",
+      "src": "./lessons/w5-d6.html",
+      "searchTerms": [
+        "Frame (Khung ảnh trên Canva)",
+        "Portrait Framing (Căn khung chân dung)",
+        "Grid View (Chế độ xem lưới)",
+        "QA (Quality Assurance — Kiểm định chất lượng)"
+      ],
+      "checklistIds": [
+        "w5-d6-c1",
+        "w5-d6-c2",
+        "w5-d6-c3"
+      ]
+    },
+    {
+      "id": "w5-d7",
+      "weekId": "w5",
+      "weekNumber": 5,
+      "moduleId": "m10",
+      "title": "Ngày 7: Tổng kết Tuần 5, Chốt Đề tài Dự án Cuối khóa (Capstone) & Lưu Hồ sơ",
+      "src": "./lessons/w5-d7.html",
+      "searchTerms": [
+        "Capstone Project (Dự án Cuối khóa)",
+        "Capstone Brief (Đề cương Dự án)",
+        "Thư mục gương (Mirror Folder Structure)"
+      ],
+      "checklistIds": [
+        "w5-d7-c1",
+        "w5-d7-c2",
+        "w5-d7-c3"
+      ]
+    },
+    {
+      "id": "w6-d1",
+      "weekId": "w6",
+      "weekNumber": 6,
+      "moduleId": "m11",
+      "title": "Ngày 1: Kể chuyện Dữ liệu, Canva Sheets (Magic Insights/Charts) & Gemini Deep Research",
+      "src": "./lessons/w6-d1.html",
+      "searchTerms": [
+        "Data Storytelling (Kể chuyện bằng dữ liệu)",
+        "Chartjunk (Rác biểu đồ)",
+        "Action Title (Tiêu đề kết luận)",
+        "Gemini Deep Research"
+      ],
+      "checklistIds": [
+        "w6-d1-c1",
+        "w6-d1-c2",
+        "w6-d1-c3"
+      ]
+    },
+    {
+      "id": "w6-d2",
+      "weekId": "w6",
+      "weekNumber": 6,
+      "moduleId": "m11",
+      "title": "Ngày 2: Dựng Bộ Slide 8 trang (Match & Move), Canva Docs & Thay thế Docs to Decks + Presenter Notes",
+      "src": "./lessons/w6-d2.html",
+      "searchTerms": [
+        "Match & Move",
+        "Presenting Timer",
+        "Presenter Notes (Ghi chú diễn giả)",
+        "Tiện ích @Canva trong Gemini"
+      ],
+      "checklistIds": [
+        "w6-d2-c1",
+        "w6-d2-c2",
+        "w6-d2-c3"
+      ]
+    },
+    {
+      "id": "w6-d3",
+      "weekId": "w6",
+      "weekNumber": 6,
+      "moduleId": "m11",
+      "title": "Ngày 3: [Bài tập Nguyên lý × Gemini & Canva] Vẽ Sơ đồ Quy trình SVG & QA Mật độ chữ Slide",
+      "src": "./lessons/w6-d3.html",
+      "searchTerms": [
+        "SVG (Scalable Vector Graphics)",
+        "Gemini Canvas",
+        "QA (Quality Assurance)",
+        "Khoảng trắng (Whitespace)"
+      ],
+      "checklistIds": [
+        "w6-d3-c1",
+        "w6-d3-c2",
+        "w6-d3-c3"
+      ]
+    },
+    {
+      "id": "w6-d4",
+      "weekId": "w6",
+      "weekNumber": 6,
+      "moduleId": "m12",
+      "title": "Ngày 4: Thiết kế Bản tin & Thư mời Sự kiện bằng Canva Email Design (Chuẩn Di động)",
+      "src": "./lessons/w6-d4.html",
+      "searchTerms": [
+        "Responsive Email (Email thích ứng đa thiết bị)",
+        "CTA (Call to Action — Kêu gọi hành động)",
+        "Preheader (Văn bản xem trước)",
+        "Live Text (Văn bản sống)"
+      ],
+      "checklistIds": [
+        "w6-d4-c1",
+        "w6-d4-c2",
+        "w6-d4-c3"
+      ]
+    },
+    {
+      "id": "w6-d5",
+      "weekId": "w6",
+      "weekNumber": 6,
+      "moduleId": "m12",
+      "title": "Ngày 5: Đặc tả Lưới Infographic Dọc (800×2000 px) & Vẽ Mũi tên/Khung nối SVG",
+      "src": "./lessons/w6-d5.html",
+      "searchTerms": [
+        "Rulers & Guides (Thước kẻ & Đường gióng)",
+        "Micro-Copy (Văn bản siêu ngắn)",
+        "Visual Flow (Luồng dẫn mắt)",
+        "Stroke-width (Độ dày nét vẽ SVG)"
+      ],
+      "checklistIds": [
+        "w6-d5-c1",
+        "w6-d5-c2",
+        "w6-d5-c3"
+      ]
+    },
+    {
+      "id": "w6-d6",
+      "weekId": "w6",
+      "weekNumber": 6,
+      "moduleId": "m12",
+      "title": "Ngày 6: Hoàn thiện Nội san/Bản tin PDF Tương tác (Gắn Link bấm được & Tối ưu ≤ 5 MB)",
+      "src": "./lessons/w6-d6.html",
+      "searchTerms": [
+        "e-Mag (Nội san/Tạp chí điện tử)",
+        "Flatten PDF (Làm phẳng PDF)",
+        "PDF Standard (PDF Tiêu chuẩn)",
+        "Pull Quote (Hộp trích dẫn nổi bật)"
+      ],
+      "checklistIds": [
+        "w6-d6-c1",
+        "w6-d6-c2",
+        "w6-d6-c3"
+      ]
+    },
+    {
+      "id": "w6-d7",
+      "weekId": "w6",
+      "weekNumber": 6,
+      "moduleId": "m12",
+      "title": "Ngày 7: Tổng kết Tuần 6, Đóng gói Hạng mục 03–04 Capstone & Lưu Hồ sơ",
+      "src": "./lessons/w6-d7.html",
+      "searchTerms": [
+        "Capstone (Đồ án tổng hợp khóa học)",
+        "Gate Review (Cổng nghiệm thu chất lượng)",
+        "Portfolio Case Study"
+      ],
+      "checklistIds": [
+        "w6-d7-c1",
+        "w6-d7-c2",
+        "w6-d7-c3"
+      ]
+    },
+    {
+      "id": "w7-d1",
+      "weekId": "w7",
+      "weekNumber": 7,
+      "moduleId": "m13",
+      "title": "Ngày 1: Storyboard Video Ngắn & Tạo Clip B-roll bằng Gemini Veo (Thay thế Magic Video)",
+      "src": "./lessons/w7-d1.html",
+      "searchTerms": [
+        "Storyboard (Bảng phân cảnh)",
+        "B-roll (Cảnh quay phụ)",
+        "Teaser (Video nhá hàng)",
+        "Hook (Câu móc 3 giây đầu)"
+      ],
+      "checklistIds": [
+        "w7-d1-c1",
+        "w7-d1-c2",
+        "w7-d1-c3"
+      ]
+    },
+    {
+      "id": "w7-d2",
+      "weekId": "w7",
+      "weekNumber": 7,
+      "moduleId": "m13",
+      "title": "Ngày 2: Dựng Video 2.0 Chuyên nghiệp (Beat Sync, Custom Animation & Phụ đề)",
+      "src": "./lessons/w7-d2.html",
+      "searchTerms": [
+        "Timeline đa lớp (Multi-track Timeline)",
+        "Beat Sync",
+        "Custom Animation",
+        "Overlay (Lớp phủ tương phản)"
+      ],
+      "checklistIds": [
+        "w7-d2-c1",
+        "w7-d2-c2",
+        "w7-d2-c3"
+      ]
+    },
+    {
+      "id": "w7-d3",
+      "weekId": "w7",
+      "weekNumber": 7,
+      "moduleId": "m13",
+      "title": "Ngày 3: Kiểm định Vùng an toàn Reels/Shorts 9:16, Xuất MP4 1080p & QA Video",
+      "src": "./lessons/w7-d3.html",
+      "searchTerms": [
+        "Safe Zone (Vùng an toàn)",
+        "MP4 1080p (Full HD)",
+        "Audio Drift (Lệch tiếng)",
+        "Thumbnail (Ảnh bìa video)"
+      ],
+      "checklistIds": [
+        "w7-d3-c1",
+        "w7-d3-c2",
+        "w7-d3-c3"
+      ]
+    },
+    {
+      "id": "w7-d4",
+      "weekId": "w7",
+      "weekNumber": 7,
+      "moduleId": "m14",
+      "title": "Ngày 4: Đặc tả Landing Page & Dựng Canva Websites 4 Phân khu Chuẩn Mobile",
+      "src": "./lessons/w7-d4.html",
+      "searchTerms": [
+        "Landing Page (Trang đích)",
+        "Hero Section (Phân khu mở đầu)",
+        "Navigation Bar (Thanh điều hướng)",
+        "Mobile View (Chế độ xem di động)"
+      ],
+      "checklistIds": [
+        "w7-d4-c1",
+        "w7-d4-c2",
+        "w7-d4-c3"
+      ]
+    },
+    {
+      "id": "w7-d5",
+      "weekId": "w7",
+      "weekNumber": 7,
+      "moduleId": "m14",
+      "title": "Ngày 5: Nhúng Canva Forms Đăng ký Thật & Tùy biến Template Canva Code Sẵn có",
+      "src": "./lessons/w7-d5.html",
+      "searchTerms": [
+        "RSVP (Répondez s'il vous plaît)",
+        "Canva Forms",
+        "Required Field (Trường bắt buộc)",
+        "Kiểm thử End-to-End"
+      ],
+      "checklistIds": [
+        "w7-d5-c1",
+        "w7-d5-c2",
+        "w7-d5-c3"
+      ]
+    },
+    {
+      "id": "w7-d6",
+      "weekId": "w7",
+      "weekNumber": 7,
+      "moduleId": "m14",
+      "title": "Ngày 6: Tạo Mini-App Lịch trình Tương tác bằng Gemini Canvas (Thay thế Canva Code Tạo sinh)",
+      "src": "./lessons/w7-d6.html",
+      "searchTerms": [
+        "Gemini Canvas",
+        "Mini-App (Ứng dụng web nhỏ)",
+        "Mã màu HEX",
+        "LocalStorage (Lưu trữ trình duyệt)"
+      ],
+      "checklistIds": [
+        "w7-d6-c1",
+        "w7-d6-c2",
+        "w7-d6-c3"
+      ]
+    },
+    {
+      "id": "w7-d7",
+      "weekId": "w7",
+      "weekNumber": 7,
+      "moduleId": "m14",
+      "title": "Ngày 7: Tổng kết Tuần 7, Hoàn tất Hạng mục 05 Capstone & Lưu Hồ sơ",
+      "src": "./lessons/w7-d7.html",
+      "searchTerms": [
+        "Cross-Channel QA (Kiểm định chéo đa kênh)",
+        "Handoff Note (Tài liệu bàn giao)",
+        "Hạng mục 05 Capstone"
+      ],
+      "checklistIds": [
+        "w7-d7-c1",
+        "w7-d7-c2",
+        "w7-d7-c3"
+      ]
+    },
+    {
+      "id": "w8-d1",
+      "weekId": "w8",
+      "weekNumber": 8,
+      "moduleId": "m15",
+      "title": "Ngày 1: Chuẩn Xuất bản In ấn (PDF Print CMYK, Bleed 3 mm, Crop Marks) & Print Shop",
+      "src": "./lessons/w8-d1.html",
+      "searchTerms": [
+        "CMYK",
+        "Bleed (Vùng tràn lề 3 mm)",
+        "Crop Marks (Dấu cắt xén)",
+        "Download Selection"
+      ],
+      "checklistIds": [
+        "w8-d1-c1",
+        "w8-d1-c2",
+        "w8-d1-c3"
+      ]
+    },
+    {
+      "id": "w8-d2",
+      "weekId": "w8",
+      "weekNumber": 8,
+      "moduleId": "m15",
+      "title": "Ngày 2: Cộng tác Nhóm (Bình luận Đính kèm ảnh, Template Link) & Rà lỗi qua Gemini Live",
+      "src": "./lessons/w8-d2.html",
+      "searchTerms": [
+        "Template Link (Liên kết mẫu)",
+        "Pre-flight QA",
+        "Gemini Live (#36)",
+        "Resolve Comment"
+      ],
+      "checklistIds": [
+        "w8-d2-c1",
+        "w8-d2-c2",
+        "w8-d2-c3"
+      ]
+    },
+    {
+      "id": "w8-d3",
+      "weekId": "w8",
+      "weekNumber": 8,
+      "moduleId": "m15",
+      "title": "Ngày 3: Đóng gói Thư mục & Lập Bảng kê Bàn giao Tài sản (Asset Handoff Sheet)",
+      "src": "./lessons/w8-d3.html",
+      "searchTerms": [
+        "Asset Handoff Sheet",
+        "Naming Convention",
+        "Tài sản thành phẩm (Final Assets)",
+        "Kiểm thử ẩn danh (Incognito Check)"
+      ],
+      "checklistIds": [
+        "w8-d3-c1",
+        "w8-d3-c2",
+        "w8-d3-c3"
+      ]
+    },
+    {
+      "id": "w8-d4",
+      "weekId": "w8",
+      "weekNumber": 8,
+      "moduleId": "m16",
+      "title": "Ngày 4: [Dự án Cuối khóa — Phần 1] Hoàn thiện Hạng mục 01 (Brand Kit + 4 SVG) & Hạng mục 02 (Đa kênh + Bulk Create)",
+      "src": "./lessons/w8-d4.html",
+      "searchTerms": [
+        "SVG (Scalable Vector Graphics)",
+        "Bulk Create",
+        "Campaign Brief",
+        "Phương án thay thế (Workaround)"
+      ],
+      "checklistIds": [
+        "w8-d4-c1",
+        "w8-d4-c2",
+        "w8-d4-c3"
+      ]
+    },
+    {
+      "id": "w8-d5",
+      "weekId": "w8",
+      "weekNumber": 8,
+      "moduleId": "m16",
+      "title": "Ngày 5: [Dự án Cuối khóa — Phần 2] Hoàn thiện Hạng mục 03 (Slides + Docs) & Hạng mục 04 (Email + Infographic)",
+      "src": "./lessons/w8-d5.html",
+      "searchTerms": [
+        "Email Header",
+        "Call to Action (CTA)",
+        "Infographic",
+        "Design Block (trong Canva Docs)"
+      ],
+      "checklistIds": [
+        "w8-d5-c1",
+        "w8-d5-c2",
+        "w8-d5-c3"
+      ]
+    },
+    {
+      "id": "w8-d6",
+      "weekId": "w8",
+      "weekNumber": 8,
+      "moduleId": "m16",
+      "title": "Ngày 6: [Dự án Cuối khóa — Phần 3] Hoàn thiện Hạng mục 05 (Video + Web/Form) & Hạng mục 06 (In ấn + Nhật ký QA)",
+      "src": "./lessons/w8-d6.html",
+      "searchTerms": [
+        "Hook (3 giây mở đầu)",
+        "Landing Page (Trang đích)",
+        "QA Log (Nhật ký Kiểm soát Chất lượng)",
+        "Responsive Mobile Preview"
+      ],
+      "checklistIds": [
+        "w8-d6-c1",
+        "w8-d6-c2",
+        "w8-d6-c3"
+      ]
+    },
+    {
+      "id": "w8-d7",
+      "weekId": "w8",
+      "weekNumber": 8,
+      "moduleId": "m16",
+      "title": "Ngày 7: Nghiệm thu Tốt nghiệp — Chấm điểm Capstone (≥ 85/100) & Đóng gói Hồ sơ Toàn khóa",
+      "src": "./lessons/w8-d7.html",
+      "searchTerms": [
+        "Ngưỡng sàn 70%",
+        "Scorecard (Phiếu chấm điểm nghiệm thu)",
+        "Master Archive (Kho lưu trữ gốc)",
+        "Portfolio Case Study"
+      ],
+      "checklistIds": [
+        "w8-d7-c1",
+        "w8-d7-c2",
+        "w8-d7-c3"
+      ]
+    }
+  ]
+}
