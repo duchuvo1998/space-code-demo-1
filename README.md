@@ -2,6 +2,10 @@
 
 Ứng dụng web tĩnh bằng HTML, CSS và JavaScript để theo dõi khóa học Canva + Gemini.
 
+## Xem web
+
+**GitHub Pages:** https://duchuvo1998.github.io/space-code-demo-1/
+
 ## Chạy ứng dụng
 
 Ứng dụng phải được phục vụ qua HTTP(S), không mở bằng `file://`.
@@ -24,6 +28,8 @@ Có thể triển khai thư mục repository trực tiếp lên bất kỳ stati
 - `courses/canva-gemini/lessons/`: các trang lesson HTML.
 
 ## Thêm lesson mới
+
+Trước khi bắt đầu, sao chép và hoàn thành checklist tại [`courses/canva-gemini/LESSON_CHECKLIST.md`](courses/canva-gemini/LESSON_CHECKLIST.md).
 
 1. Giữ nguyên lesson ID đang phát hành.
 2. Tạo file HTML dưới `courses/canva-gemini/lessons/` bằng tên ổn định, ví dụ `w1-d1.html`.
