@@ -262,21 +262,20 @@ function renderLesson(lessonId) {
     app.querySelector("[data-route]").addEventListener("click", handleSidebarRoute);
     return;
   }
-  const weekLessons = manifest.lessons.filter(item => item.weekNumber === lesson.weekNumber);
-  const lessonIndex = weekLessons.findIndex(item => item.id === lessonId);
-  const previousLesson = lessonIndex > 0 ? weekLessons[lessonIndex - 1] : null;
-  const nextLesson = lessonIndex >= 0 && lessonIndex < weekLessons.length - 1 ? weekLessons[lessonIndex + 1] : null;
+  const lessonIndex = manifest.lessons.findIndex(item => item.id === lessonId);
+  const previousLesson = lessonIndex > 0 ? manifest.lessons[lessonIndex - 1] : null;
+  const nextLesson = lessonIndex >= 0 && lessonIndex < manifest.lessons.length - 1 ? manifest.lessons[lessonIndex + 1] : null;
   lessonFrame = document.createElement("iframe");
   lessonFrame.className = "lesson-frame";
   lessonFrame.title = lesson.title;
-  lessonFrame.src = lesson.src;
+  lessonFrame.src = new URL(`./courses/canva-gemini/${lesson.src.replace("./", "")}`, window.location.href).href;
   lessonFrame.sandbox = "allow-scripts allow-same-origin";
   lessonFrame.referrerPolicy = "strict-origin";
   app.innerHTML = `<div class="lesson-shell">
     <div class="lesson-toolbar">
-      <button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">← Tuần ${lesson.weekNumber}</button>
-      <div class="lesson-toolbar-title"><strong>${esc(lesson.title)}</strong><span>${previousLesson ? "Bài trước: " + esc(previousLesson.title) : "Bài đầu tiên của tuần"}</span></div>
-      ${nextLesson ? `<button type="button" class="btn btn-sm btn-primary" data-route="lesson" data-id="${esc(nextLesson.id)}">Bài tiếp theo →</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">Hoàn thành tuần</button>`}
+      ${previousLesson ? `<button type="button" class="btn btn-sm" data-route="lesson" data-id="${esc(previousLesson.id)}">← Bài trước</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">← Tuần ${lesson.weekNumber}</button>`}
+      <div class="lesson-toolbar-title"><strong>${esc(lesson.title)}</strong><span>${previousLesson ? "Bài trước: " + esc(previousLesson.title) : "Bài đầu tiên của khóa học"}</span></div>
+      ${nextLesson ? `<button type="button" class="btn btn-sm btn-primary" data-route="lesson" data-id="${esc(nextLesson.id)}">Bài tiếp theo →</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">Hoàn thành khóa học</button>`}
     </div>
   </div>`;
   app.querySelector(".lesson-shell").appendChild(lessonFrame);
