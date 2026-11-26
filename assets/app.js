@@ -81,6 +81,8 @@ function updateStorageBanner() {
 function scheduleSave() {
   clearTimeout(saveTimer);
   document.getElementById("saveStatus").textContent = "Đang lưu...";
+  const syncStatus = document.getElementById("syncStatus");
+  if (syncStatus) syncStatus.textContent = "Đang lưu...";
   document.getElementById("saveStatus").classList.add("show");
   saveTimer = setTimeout(() => {
     void saveProgress();
@@ -105,7 +107,10 @@ async function saveProgress() {
   // FIREBASE_HOOK: setDoc users/{uid}/course/progress after debounce
   // FIREBASE_HOOK: merge localStorage cache with cloud progress
   await window.courseAppHooks.saveProgress(getProgress());
-  document.getElementById("saveStatus").textContent = storageAvailable ? "Đã lưu" : "Chỉ lưu trong phiên";
+  const saveLabel = storageAvailable ? "Đã lưu" : "Chỉ lưu trong phiên";
+  document.getElementById("saveStatus").textContent = saveLabel;
+  const syncStatus = document.getElementById("syncStatus");
+  if (syncStatus) syncStatus.textContent = saveLabel;
   setTimeout(() => document.getElementById("saveStatus").classList.remove("show"), 1800);
 }
 
@@ -167,18 +172,23 @@ function getCourseStats() {
 
 function renderSidebar() {
   const progress = getProgress();
+  const hash = location.hash;
+  const activeLessonMatch = /^#course\/canva-gemini\/lesson\/([^/?]+)/.exec(hash);
+  const activeWeekMatch = /^#course\/canva-gemini\/week\/([^/?]+)/.exec(hash);
   let html = `
     <div class="nav-group-label">Tổng quan</div>
-    <button type="button" class="nav-btn" data-route="dashboard"><span>🏠 Lộ trình 8 tuần</span></button>
-    <button type="button" class="nav-btn" data-route="portfolio"><span>📁 Hồ sơ học tập</span><span class="pill pill-ready">${progress.portfolio.length}</span></button>
+    <button type="button" class="nav-btn ${(!hash || hash.includes("/dashboard")) ? "active" : ""}" data-route="dashboard"><span>🏠 Lộ trình 8 tuần</span></button>
+    <button type="button" class="nav-btn ${hash.includes("/portfolio") ? "active" : ""}" data-route="portfolio"><span>📁 Hồ sơ học tập</span><span class="pill pill-ready">${progress.portfolio.length}</span></button>
     <div class="nav-group-label">Các tuần học</div>
   `;
   for (let weekNumber = 1; weekNumber <= 8; weekNumber++) {
     const stats = getWeekStats(weekNumber);
-    html += `<button type="button" class="nav-btn" data-route="week" data-week="${weekNumber}"><span>Tuần ${weekNumber}</span><span class="pill ${stats.done === stats.total ? "pill-done" : "pill-ready"}">${stats.pct}%</span></button><div class="nav-sub">`;
+    const activeWeek = activeWeekMatch?.[1] === `w${weekNumber}`;
+    html += `<button type="button" class="nav-btn ${activeWeek ? "active" : ""}" data-route="week" data-week="${weekNumber}"><span>Tuần ${weekNumber}</span><span class="pill ${stats.done === stats.total ? "pill-done" : "pill-ready"}">${stats.pct}%</span></button><div class="nav-sub">`;
     manifest.lessons.filter(lesson => lesson.weekNumber === weekNumber).forEach(lesson => {
       const done = progress.completedLessons.includes(lesson.id) || !!progress.lessonsDone[lesson.id];
-      html += `<button type="button" class="nav-btn" data-route="lesson" data-id="${esc(lesson.id)}"><span>${done ? "✓ " : ""}Ngày ${lesson.id.split("-d")[1] || ""}</span></button>`;
+      const activeLesson = activeLessonMatch?.[1] === lesson.id;
+      html += `<button type="button" class="nav-btn ${activeLesson ? "active" : ""}" data-route="lesson" data-id="${esc(lesson.id)}"><span>${done ? "✓ " : ""}Ngày ${lesson.id.split("-d")[1] || ""}</span></button>`;
     });
     html += `</div>`;
   }
@@ -191,7 +201,10 @@ function handleSidebarRoute(event) {
   const route = button.dataset.route;
   if (route === "dashboard") location.hash = "#course/canva-gemini/dashboard";
   if (route === "portfolio") location.hash = "#course/canva-gemini/portfolio";
-  if (route === "week") location.hash = `#course/canva-gemini/week/w${button.dataset.week}`;
+  if (route === "week") {
+    const weekId = String(button.dataset.week).startsWith("w") ? button.dataset.week : `w${button.dataset.week}`;
+    location.hash = `#course/canva-gemini/week/${weekId}`;
+  }
   if (route === "lesson") location.hash = `#course/canva-gemini/lesson/${button.dataset.id}`;
   closeMobileMenu();
 }
@@ -211,10 +224,10 @@ function renderDashboard() {
     </button>`;
   }
   app.innerHTML = `
-    <div class="card">
+    <div class="card hero-card">
       <h1>${esc(manifest.course.title)}</h1>
-      <p>Lộ trình tự học 8 tuần với 56 bài học thực chiến.</p>
-      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px"><span>Tiến độ bài học</span><span>${stats.doneLessons}/${stats.totalLessons}</span></div>
+      <p>Lộ trình thực chiến 8 tuần với 56 bài học, checklist theo ngày và hồ sơ sản phẩm.</p>
+      <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;max-width:720px"><span>Tiến độ bài học</span><span>${stats.doneLessons}/${stats.totalLessons}</span></div>
       <div class="progress-track"><div class="progress-fill" style="width:${stats.totalLessons ? stats.doneLessons / stats.totalLessons * 100 : 0}%"></div></div>
     </div>
     <div class="stats-grid">
@@ -249,19 +262,34 @@ function renderLesson(lessonId) {
     app.querySelector("[data-route]").addEventListener("click", handleSidebarRoute);
     return;
   }
+  const weekLessons = manifest.lessons.filter(item => item.weekNumber === lesson.weekNumber);
+  const lessonIndex = weekLessons.findIndex(item => item.id === lessonId);
+  const previousLesson = lessonIndex > 0 ? weekLessons[lessonIndex - 1] : null;
+  const nextLesson = lessonIndex >= 0 && lessonIndex < weekLessons.length - 1 ? weekLessons[lessonIndex + 1] : null;
   lessonFrame = document.createElement("iframe");
   lessonFrame.className = "lesson-frame";
   lessonFrame.title = lesson.title;
   lessonFrame.src = lesson.src;
   lessonFrame.sandbox = "allow-scripts allow-same-origin";
   lessonFrame.referrerPolicy = "strict-origin";
-  app.innerHTML = "";
-  app.appendChild(lessonFrame);
+  app.innerHTML = `<div class="lesson-shell">
+    <div class="lesson-toolbar">
+      <button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">← Tuần ${lesson.weekNumber}</button>
+      <div class="lesson-toolbar-title"><strong>${esc(lesson.title)}</strong><span>${previousLesson ? "Bài trước: " + esc(previousLesson.title) : "Bài đầu tiên của tuần"}</span></div>
+      ${nextLesson ? `<button type="button" class="btn btn-sm btn-primary" data-route="lesson" data-id="${esc(nextLesson.id)}">Bài tiếp theo →</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">Hoàn thành tuần</button>`}
+    </div>
+  </div>`;
+  app.querySelector(".lesson-shell").appendChild(lessonFrame);
+  app.querySelectorAll("[data-route]").forEach(button => button.addEventListener("click", handleSidebarRoute));
   lessonFrame.addEventListener("load", () => {
     if (!lessonFrame.contentWindow) return;
     const progress = getProgress();
+    const checklist = {};
+    (lesson.checklistIds || []).forEach(id => {
+      checklist[id] = !!progress.checklist[id];
+    });
     const data = {
-      checklist: {},
+      checklist,
       notes: progress.notes[lessonId] || "",
       completed: progress.completedLessons.includes(lessonId) || !!progress.lessonsDone[lessonId],
       date: typeof progress.lessonsDone[lessonId] === "string" ? progress.lessonsDone[lessonId] : ""
@@ -329,6 +357,7 @@ function deletePortfolio(id) {
 
 function route() {
   if (!manifest) return;
+  document.getElementById("searchResults")?.remove();
   const hash = location.hash || `#course/canva-gemini/dashboard`;
   const lessonMatch = /^#course\/canva-gemini\/lesson\/([^/?]+)/.exec(hash);
   const weekMatch = /^#course\/canva-gemini\/week\/([^/?]+)/.exec(hash);

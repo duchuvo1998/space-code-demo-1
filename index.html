@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8f7">
   <title>Canva + Gemini 8 Tuần</title>
   <link rel="stylesheet" href="./assets/style.css">
 </head>
@@ -19,6 +20,7 @@
       <input type="search" id="globalSearch" placeholder="Tìm bài học, thuật ngữ..." aria-label="Tìm kiếm nhanh bài học và thuật ngữ">
     </div>
     <div class="topbar-actions">
+      <span class="sync-status" id="syncStatus" title="Trạng thái đồng bộ">Đã lưu</span>
       <button type="button" class="btn btn-sm" id="exportButton" title="Xuất tiến độ JSON">⬇ <span class="hide-sm">Xuất JSON</span></button>
       <button type="button" class="btn btn-sm" id="importButton" title="Nhập tiến độ JSON">⬆ <span class="hide-sm">Nhập JSON</span></button>
       <input type="file" id="importFileInput" accept="application/json,.json" hidden>
