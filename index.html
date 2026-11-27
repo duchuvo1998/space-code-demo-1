@@ -13,7 +13,7 @@
     <div class="topbar-left">
       <button type="button" class="btn btn-icon menu-toggle" id="menuToggle" aria-label="Mở menu điều hướng" data-i18n-aria-label="openNavigation" aria-controls="sidebar" aria-expanded="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       <button type="button" class="brand" id="brandButton" aria-label="Canva + Gemini 8 Tuần — Về trang chủ" data-i18n-aria-label="brandHomeAria" title="Về trang chủ" data-i18n-title="home">
-        <span class="brand-dot" aria-hidden="true"></span>
+        <span class="brand-home-badge" aria-hidden="true"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1z"/></svg></span>
         <span class="brand-text">Canva + Gemini 8 Tuần</span>
       </button>
     </div>
@@ -21,8 +21,7 @@
       <input type="search" id="globalSearch" placeholder="Tìm bài học, thuật ngữ..." data-i18n-placeholder="searchPlaceholder" aria-label="Tìm kiếm nhanh bài học và thuật ngữ" data-i18n-aria-label="searchLabel">
     </div>
     <div class="topbar-actions">
-      <span class="sync-status" id="syncStatus" title="Trạng thái đồng bộ" data-i18n-title="syncState">Lưu trên trình duyệt này</span>
-      <button type="button" class="btn btn-sm" id="accountButton" aria-label="Đăng nhập Google" title="Đăng nhập Google" hidden></button>
+      <span class="sync-status" id="syncStatus" data-state="local" role="status" aria-live="polite" title="Trạng thái đồng bộ" data-i18n-title="syncState">Lưu trên trình duyệt này</span>
       <details class="topbar-tools" id="topbarTools">
         <summary class="btn btn-sm" title="Công cụ" data-i18n-title="toolsMenu">
           <span data-i18n="moreTools">Thêm</span>
@@ -42,6 +41,39 @@
           <button type="button" class="btn btn-sm btn-danger" id="resetButton" title="Đặt lại tiến độ" data-i18n-title="resetProgress"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/></svg><span data-i18n="resetProgressLabel">Đặt lại tiến độ</span></button>
         </div>
       </details>
+      <div class="account-menu" id="accountMenu">
+        <button type="button" class="btn btn-sm account-trigger account-btn-local" id="accountButton" aria-haspopup="menu" aria-expanded="false" aria-controls="accountMenuPanel" aria-label="Hồ sơ cục bộ — Chưa đăng nhập" title="Hồ sơ cá nhân và đồng bộ"></button>
+        <div class="account-menu-panel" id="accountMenuPanel" role="menu" aria-labelledby="accountButton" hidden>
+          <div class="account-menu-header">
+            <span class="account-avatar account-avatar-lg" id="accountMenuAvatar" aria-hidden="true"></span>
+            <div class="account-menu-identity">
+              <strong class="account-menu-name" id="accountMenuName"></strong>
+              <span class="account-menu-email" id="accountMenuEmail"></span>
+            </div>
+          </div>
+          <div class="account-menu-sync" id="accountMenuSync" data-state="local">
+            <span class="account-sync-dot" aria-hidden="true"></span>
+            <span class="account-sync-text" id="accountMenuSyncText"></span>
+          </div>
+          <ul class="account-menu-stats" id="accountMenuStats"></ul>
+          <button type="button" class="btn btn-sm account-menu-item" id="retrySyncButton" role="menuitem" hidden>
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/></svg>
+            <span data-i18n="retrySync">Thử đồng bộ lại</span>
+          </button>
+          <div class="account-menu-divider" id="accountMenuDivider" role="separator"></div>
+          <div class="account-menu-signin" id="accountMenuSignInSection" hidden>
+            <button type="button" class="btn btn-sm btn-primary account-menu-item account-menu-signin-btn" id="signInMenuButton" role="menuitem">
+              <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+              <span data-i18n="signInGoogle">Đăng nhập bằng Google</span>
+            </button>
+            <p class="account-menu-hint" id="signInMenuHint" data-i18n="localProfileSignInHint">Đăng nhập để đồng bộ tiến độ giữa các thiết bị.</p>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger account-menu-item" id="signOutMenuButton" role="menuitem" hidden>
+            <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+            <span data-i18n="signOutAction">Đăng xuất</span>
+          </button>
+        </div>
+      </div>
     </div>
     <input type="file" id="importFileInput" accept="application/json,.json" hidden>
   </header>
@@ -111,13 +143,73 @@
     </div>
   </div>
 
-  <div class="modal-backdrop" id="cloudOverwriteModal" role="dialog" aria-modal="true" aria-labelledby="cloudOverwriteTitle" aria-describedby="cloudOverwriteDescription" tabindex="-1">
-    <div class="modal cloud-overwrite-modal">
-      <h2 id="cloudOverwriteTitle" data-i18n="overwriteTitle">Thay thế tiến độ trên Google?</h2>
-      <p id="cloudOverwriteDescription" data-i18n="overwriteDescription">Tài khoản Google này đã có tiến độ học. Nếu tiếp tục, toàn bộ tiến độ trên Google sẽ được thay bằng tiến độ trên trình duyệt này; dữ liệu Google hiện tại sẽ không được gộp và sẽ bị thay thế. Bản lưu trên trình duyệt này vẫn được giữ nguyên. Hủy để giữ nguyên dữ liệu trên Google và không đồng bộ.</p>
+  <div class="modal-backdrop" id="syncConflictModal" role="dialog" aria-modal="true" aria-labelledby="syncConflictTitle" aria-describedby="syncConflictDescription" tabindex="-1">
+    <div class="modal sync-conflict-modal">
+      <h2 id="syncConflictTitle" data-i18n="syncConflictTitle">Chọn tiến độ bạn muốn giữ</h2>
+      <p id="syncConflictDescription"></p>
+      <div class="sync-summary-grid">
+        <div class="sync-summary-card">
+          <strong id="syncSummaryLocalTitle" data-i18n="syncConflictLocalLabel">Trình duyệt này</strong>
+          <ul id="syncSummaryLocalList"></ul>
+        </div>
+        <div class="sync-summary-card">
+          <strong id="syncSummaryCloudTitle" data-i18n="syncConflictCloudLabel">Tài khoản Google</strong>
+          <ul id="syncSummaryCloudList"></ul>
+        </div>
+      </div>
+      <div class="sync-choice-list" role="radiogroup" aria-labelledby="syncConflictTitle">
+        <label class="sync-choice-card" data-sync-choice-card="use-cloud">
+          <input type="radio" name="syncConflictChoice" value="use-cloud">
+          <span class="sync-choice-body">
+            <span class="sync-choice-head">
+              <strong data-i18n="syncChoiceUseCloudTitle">Dùng tiến độ trên Google</strong>
+              <span class="sync-recommended-badge" data-recommended-for="use-cloud" data-i18n="syncRecommendedBadge" hidden>Khuyên dùng</span>
+            </span>
+            <span class="sync-choice-desc" data-i18n="syncChoiceUseCloudDescription">Tải tiến độ từ Google xuống trình duyệt này. Dữ liệu trên tài khoản Google được giữ nguyên.</span>
+          </span>
+        </label>
+        <label class="sync-choice-card" data-sync-choice-card="merge">
+          <input type="radio" name="syncConflictChoice" value="merge">
+          <span class="sync-choice-body">
+            <span class="sync-choice-head">
+              <strong data-i18n="syncChoiceMergeTitle">Gộp tiến độ cả hai nơi</strong>
+              <span class="sync-recommended-badge" data-recommended-for="merge" data-i18n="syncRecommendedBadge" hidden>Khuyên dùng</span>
+            </span>
+            <span class="sync-choice-desc" data-i18n="syncChoiceMergeDescription">Kết hợp bài học đã hoàn thành, mục checklist đã tick, ghi chú và sản phẩm từ cả trình duyệt lẫn Google.</span>
+          </span>
+        </label>
+        <label class="sync-choice-card sync-choice-card-danger" data-sync-choice-card="replace-cloud">
+          <input type="radio" name="syncConflictChoice" value="replace-cloud">
+          <span class="sync-choice-body">
+            <span class="sync-choice-head">
+              <strong data-i18n="syncChoiceReplaceCloudTitle">Ghi đè Google bằng trình duyệt này</strong>
+              <span class="sync-recommended-badge" data-recommended-for="replace-cloud" data-i18n="syncRecommendedBadge" hidden>Khuyên dùng</span>
+            </span>
+            <span class="sync-choice-desc" data-i18n="syncChoiceReplaceCloudDescription">Thay toàn bộ tiến độ trên Google bằng dữ liệu hiện có trên trình duyệt này.</span>
+          </span>
+        </label>
+      </div>
       <div class="modal-actions">
-        <button type="button" class="btn" data-cloud-overwrite-choice="cancel" data-i18n="cancelSignIn">Hủy đăng nhập</button>
-        <button type="button" class="btn btn-danger" data-cloud-overwrite-choice="replace" data-i18n="overwriteGoogle">Ghi đè tiến độ Google</button>
+        <button type="button" class="btn" id="cancelSyncConflict" data-i18n="cancelSignIn">Hủy đăng nhập</button>
+        <button type="button" class="btn btn-primary" id="confirmSyncConflict" data-i18n="continueSync">Tiếp tục đồng bộ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="signOutModal" role="dialog" aria-modal="true" aria-labelledby="signOutModalTitle" aria-describedby="signOutModalDescription" tabindex="-1">
+    <div class="modal signout-modal">
+      <h2 id="signOutModalTitle" data-i18n="signOutModalTitle">Đăng xuất khỏi khóa học?</h2>
+      <p id="signOutModalDescription"></p>
+      <label class="signout-clear-option" for="signOutClearLocal">
+        <input type="checkbox" id="signOutClearLocal">
+        <span>
+          <strong data-i18n="signOutClearLocalLabel">Xóa tiến độ lưu trên trình duyệt này sau khi đăng xuất</strong>
+          <small data-i18n="signOutClearLocalHint">Nên chọn nếu bạn đang dùng máy chung hoặc chuẩn bị đăng nhập tài khoản khác.</small>
+        </span>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="cancelSignOut" data-i18n="cancel">Hủy</button>
+        <button type="button" class="btn btn-danger" id="confirmSignOut" data-i18n="signOutAction">Đăng xuất</button>
       </div>
     </div>
   </div>

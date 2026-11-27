@@ -6,14 +6,18 @@ import { initializeLocale, setLocale, translate as t } from "../localization/loc
 import {
   applyProgressChanges,
   diffProgress,
-  hasProgressData
+  resolveSignInSyncStrategy,
+  summarizeProgress
 } from "../progress/progress-merge.mjs";
 import {
+  clearLastSyncedUid,
   clearPendingCloudReset,
   createDefaultProgress,
+  loadLastSyncedUid,
   loadPendingCloudReset,
   loadProgressState,
   loadWelcomeChoice,
+  saveLastSyncedUid,
   savePendingCloudReset,
   saveProgressState,
   saveWelcomeChoice
@@ -39,8 +43,13 @@ let syncError = "";
 const pendingCloudReset = loadPendingCloudReset();
 let resetCloudUid = pendingCloudReset.uid;
 if (!pendingCloudReset.available) storageAvailable = false;
+const storedLastSyncedUid = loadLastSyncedUid();
+let lastSyncedUid = storedLastSyncedUid.uid;
+if (!storedLastSyncedUid.available) storageAvailable = false;
 let activeSavePromise = null;
 let saveAgain = false;
+let authBusy = "";
+let syncSaving = false;
 
 const app = document.getElementById("app");
 const sidebar = document.getElementById("sidebar");
@@ -128,45 +137,232 @@ function clearCloudReset() {
   return false;
 }
 
+function persistLastSyncedUid(uid) {
+  lastSyncedUid = uid || "";
+  if (!lastSyncedUid) return;
+  const result = saveLastSyncedUid(lastSyncedUid);
+  if (!result.saved) {
+    storageAvailable = false;
+    updateStorageBanner();
+  }
+}
+
+function clearStoredLastSyncedUid() {
+  lastSyncedUid = "";
+  const result = clearLastSyncedUid();
+  if (!result.saved) {
+    storageAvailable = false;
+    updateStorageBanner();
+  }
+}
+
+function getUserDisplayName(user) {
+  return user?.displayName?.trim() || user?.email?.trim() || t("accountFallbackName");
+}
+
+function getUserAccountLabel(user) {
+  return user?.email?.trim() || user?.displayName?.trim() || t("accountFallbackName");
+}
+
+function getUserInitial(user) {
+  const source = (user?.displayName || user?.email || "G").trim();
+  return (source[0] || "G").toUpperCase();
+}
+
+function renderAvatarElement(container, user) {
+  if (!container) return;
+  if (!user) {
+    container.classList.add("account-avatar-local");
+    container.innerHTML = UI_ICONS.account;
+    return;
+  }
+  container.classList.remove("account-avatar-local");
+  container.textContent = getUserInitial(user);
+  if (user?.photoURL && /^https?:\/\//i.test(user.photoURL)) {
+    const img = document.createElement("img");
+    img.className = "account-avatar-img";
+    img.src = user.photoURL;
+    img.alt = "";
+    img.referrerPolicy = "no-referrer";
+    img.addEventListener("error", () => img.remove());
+    container.appendChild(img);
+  }
+}
+
+function renderAccountMenuStats() {
+  const statsEl = document.getElementById("accountMenuStats");
+  if (!statsEl) return;
+  statsEl.innerHTML = "";
+  formatSyncSummaryItems(getProgress()).forEach(text => {
+    const item = document.createElement("li");
+    item.textContent = text;
+    statsEl.appendChild(item);
+  });
+}
+
+function closeAccountMenu({ restoreFocus = false } = {}) {
+  const panel = document.getElementById("accountMenuPanel");
+  const button = document.getElementById("accountButton");
+  if (!panel || panel.hidden) return;
+  const hadFocus = panel.contains(document.activeElement);
+  panel.hidden = true;
+  if (button) {
+    button.setAttribute("aria-expanded", "false");
+  }
+  if (restoreFocus && hadFocus) {
+    button?.focus({ preventScroll: true });
+  }
+}
+
+function toggleAccountMenu() {
+  const panel = document.getElementById("accountMenuPanel");
+  const button = document.getElementById("accountButton");
+  if (!panel || !button) return;
+  const willOpen = panel.hidden;
+  if (willOpen) {
+    closeToolsMenu();
+    renderAccountMenuStats();
+    panel.hidden = false;
+    button.setAttribute("aria-expanded", "true");
+    panel.querySelector("button:not([hidden]):not(:disabled)")?.focus({ preventScroll: true });
+  } else {
+    closeAccountMenu({ restoreFocus: true });
+  }
+}
+
 function updateAccountUi() {
+  const accountMenu = document.getElementById("accountMenu");
   const accountButton = document.getElementById("accountButton");
+  const accountMenuPanel = document.getElementById("accountMenuPanel");
   const syncStatus = document.getElementById("syncStatus");
-  if (!accountButton || !syncStatus) return;
+  if (!accountMenu || !accountButton || !syncStatus) return;
   const welcomeLoginButton = document.getElementById("welcomeLoginButton");
 
-  if (firebaseInitError) {
-    accountButton.hidden = true;
-    if (welcomeLoginButton) welcomeLoginButton.hidden = true;
-    syncStatus.textContent = t("firebaseNotConnected");
-    syncStatus.title = t("browserProgressSaved");
-    return;
-  }
-  if (!firebaseSync) {
-    accountButton.hidden = true;
-    if (welcomeLoginButton) welcomeLoginButton.hidden = true;
-    syncStatus.textContent = t("saveInBrowser");
-    syncStatus.title = t("configureFirebase");
+  const cloudAvailable = Boolean(firebaseSync) && !firebaseInitError;
+  const user = cloudAvailable ? firebaseSync.currentUser : null;
+  const syncState = firebaseInitError || syncError
+    ? "error"
+    : syncSaving
+      ? "syncing"
+      : user
+        ? "synced"
+        : "local";
+
+  accountMenu.hidden = false;
+  if (welcomeLoginButton) welcomeLoginButton.hidden = !cloudAvailable || Boolean(user);
+
+  syncStatus.dataset.state = syncState;
+  syncStatus.textContent = firebaseInitError
+    ? t("firebaseNotConnected")
+    : syncError
+      ? t("syncError")
+      : syncSaving
+        ? t("saving")
+        : user
+          ? t("synced")
+          : t("saveInBrowser");
+  syncStatus.title = firebaseInitError
+    ? t("browserProgressSaved")
+    : !firebaseSync
+      ? t("configureFirebase")
+      : syncError || (user
+        ? t("syncingWithAccount", { account: getUserAccountLabel(user) })
+        : t("browserProgressSyncHint"));
+
+  accountButton.disabled = Boolean(authBusy);
+  if (authBusy) accountButton.setAttribute("aria-busy", "true");
+  else accountButton.removeAttribute("aria-busy");
+  accountButton.setAttribute("aria-haspopup", "menu");
+  accountButton.setAttribute("aria-controls", "accountMenuPanel");
+  accountButton.setAttribute("aria-expanded", String(Boolean(accountMenuPanel && !accountMenuPanel.hidden)));
+
+  const nameEl = document.getElementById("accountMenuName");
+  const emailEl = document.getElementById("accountMenuEmail");
+  const menuSyncEl = document.getElementById("accountMenuSync");
+  const menuSyncTextEl = document.getElementById("accountMenuSyncText");
+  const retryButton = document.getElementById("retrySyncButton");
+  const dividerEl = document.getElementById("accountMenuDivider");
+  const signInSection = document.getElementById("accountMenuSignInSection");
+  const signInMenuButton = document.getElementById("signInMenuButton");
+  const signOutMenuButton = document.getElementById("signOutMenuButton");
+
+  renderAccountMenuStats();
+
+  if (!user) {
+    accountButton.classList.add("account-btn-local");
+    accountButton.classList.remove("account-btn-profile");
+    accountButton.title = `${t("localProfileTitle")} — ${t("localProfileSubtitle")}`;
+    accountButton.setAttribute("aria-label", authBusy === "signin" ? t("signingInProgress") : t("localProfileAria"));
+    accountButton.innerHTML = authBusy === "signin"
+      ? `<span class="btn-spinner" aria-hidden="true"></span><span class="account-label">${esc(t("signingInProgress"))}</span>`
+      : `<span class="account-avatar-wrap"><span class="account-avatar account-avatar-local" data-trigger-avatar></span><span class="account-status-dot" data-state="${syncState}" aria-hidden="true"></span></span><span class="account-label">${esc(t("localProfileTrigger"))}</span><svg class="ui-icon account-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>`;
+    renderAvatarElement(accountButton.querySelector("[data-trigger-avatar]"), null);
+    renderAvatarElement(document.getElementById("accountMenuAvatar"), null);
+
+    if (nameEl) {
+      nameEl.textContent = t("localProfileTitle");
+      nameEl.title = nameEl.textContent;
+    }
+    if (emailEl) {
+      emailEl.textContent = t("localProfileSubtitle");
+      emailEl.hidden = false;
+      emailEl.title = emailEl.textContent;
+    }
+    if (menuSyncEl) menuSyncEl.dataset.state = syncState;
+    if (menuSyncTextEl) {
+      menuSyncTextEl.textContent = firebaseInitError
+        ? t("firebaseNotConnected")
+        : t("saveInBrowser");
+      menuSyncTextEl.title = firebaseInitError ? t("browserProgressSaved") : t("browserProgressSyncHint");
+    }
+    if (retryButton) retryButton.hidden = true;
+    if (signOutMenuButton) signOutMenuButton.hidden = true;
+    if (signInSection) signInSection.hidden = !cloudAvailable;
+    if (dividerEl) dividerEl.hidden = !cloudAvailable;
+    if (signInMenuButton) signInMenuButton.disabled = Boolean(authBusy);
     return;
   }
 
-  accountButton.hidden = false;
-  if (welcomeLoginButton) welcomeLoginButton.hidden = !!firebaseSync.currentUser;
-  accountButton.innerHTML = UI_ICONS.account;
-  accountButton.title = firebaseSync.currentUser ? t("signOutGoogle") : t("signInGoogle");
-  accountButton.setAttribute(
-    "aria-label",
-    firebaseSync.currentUser
-      ? t("signingOutGoogle", { account: firebaseSync.currentUser.email || "Google" })
-      : t("signingInGoogle")
-  );
-  syncStatus.textContent = syncError
-    ? t("syncError")
-    : firebaseSync.currentUser
-      ? t("synced")
-      : t("saveInBrowser");
-  syncStatus.title = syncError || (firebaseSync.currentUser
-    ? t("syncingWithAccount", { account: firebaseSync.currentUser.email || "Google" })
-    : t("browserProgressSyncHint"));
+  const accountLabel = getUserAccountLabel(user);
+  accountButton.classList.remove("account-btn-local");
+  accountButton.classList.add("account-btn-profile");
+  accountButton.title = `${t("accountMenuTitle")} (${accountLabel})`;
+  accountButton.setAttribute("aria-label", t("accountMenuLabel", { account: accountLabel }));
+
+  accountButton.innerHTML = authBusy
+    ? `<span class="btn-spinner" aria-hidden="true"></span><span class="account-label">${esc(t(authBusy === "signout" ? "signingOutProgress" : "saving"))}</span>`
+    : `<span class="account-avatar-wrap"><span class="account-avatar" data-trigger-avatar></span><span class="account-status-dot" data-state="${syncState}" aria-hidden="true"></span></span><svg class="ui-icon account-chevron" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>`;
+  renderAvatarElement(accountButton.querySelector("[data-trigger-avatar]"), user);
+  renderAvatarElement(document.getElementById("accountMenuAvatar"), user);
+
+  if (nameEl) {
+    nameEl.textContent = getUserDisplayName(user);
+    nameEl.title = nameEl.textContent;
+  }
+  if (emailEl) {
+    emailEl.textContent = user.email || "";
+    emailEl.hidden = !user.email || user.email === nameEl?.textContent;
+    emailEl.title = user.email || "";
+  }
+  if (menuSyncEl) menuSyncEl.dataset.state = syncState;
+  if (menuSyncTextEl) {
+    menuSyncTextEl.textContent = syncError
+      ? t("cloudSyncErrorLabel")
+      : syncSaving
+        ? t("cloudSyncingLabel")
+        : t("cloudSyncedLabel");
+    menuSyncTextEl.title = syncError || "";
+  }
+  if (retryButton) {
+    retryButton.hidden = !syncError || Boolean(authBusy);
+    retryButton.disabled = Boolean(authBusy);
+  }
+  if (signInSection) signInSection.hidden = true;
+  if (dividerEl) dividerEl.hidden = false;
+  if (signOutMenuButton) {
+    signOutMenuButton.hidden = false;
+    signOutMenuButton.disabled = Boolean(authBusy);
+  }
 }
 
 function saveLocalState() {
@@ -201,9 +397,9 @@ function scheduleSave() {
   clearTimeout(saveTimer);
   clearTimeout(saveStatusHideTimer);
   const localSaved = saveLocalState();
+  syncSaving = true;
   document.getElementById("saveStatus").textContent = t("saving");
-  const syncStatus = document.getElementById("syncStatus");
-  if (syncStatus) syncStatus.textContent = t("saving");
+  updateAccountUi();
   document.getElementById("saveStatus").classList.add("show");
   courseViews?.notifyLessonSaveStatus(localSaved ? "saving" : "error");
   saveTimer = setTimeout(() => {
@@ -220,6 +416,21 @@ function flushPendingSave() {
   saveLocalState();
   if (firebaseSync?.currentUser) {
     void saveProgress();
+  }
+}
+
+async function flushPendingSaveAsync() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    saveLocalState();
+    if (firebaseSync?.currentUser) {
+      await saveProgress();
+      return;
+    }
+  }
+  if (activeSavePromise) {
+    await activeSavePromise;
   }
 }
 
@@ -249,6 +460,7 @@ function scheduleHideSaveStatus() {
 async function saveProgressOnce() {
   const localSaved = saveLocalState();
   if (!firebaseSync?.currentUser) {
+    syncSaving = false;
     updateAccountUi();
     document.getElementById("saveStatus").textContent = formatSaveStatus(localSaved);
     courseViews?.notifyLessonSaveStatus(localSaved ? "saved" : "error");
@@ -256,6 +468,8 @@ async function saveProgressOnce() {
     return;
   }
 
+  syncSaving = true;
+  updateAccountUi();
   const progressSnapshot = cloneProgress(getProgress());
   const replaceCloudProgress = !!firebaseSync?.currentUser
     && firebaseSync.currentUser.uid === resetCloudUid;
@@ -275,17 +489,20 @@ async function saveProgressOnce() {
       syncError = resetCleared ? "" : syncError;
     }
     else syncError = "";
+    persistLastSyncedUid(firebaseSync.currentUser.uid);
+    syncSaving = false;
     updateAccountUi();
     document.getElementById("saveStatus").textContent = formatSaveStatus(localSaved);
     courseViews?.notifyLessonSaveStatus(localSaved ? "saved" : "error");
   } catch (error) {
     syncError = error instanceof Error ? error.message : t("unknownError");
+    syncSaving = false;
     updateAccountUi();
     document.getElementById("saveStatus").textContent = localSaved
       ? t("savedBrowserSyncError")
       : t("unableToSaveProgress");
     courseViews?.notifyLessonSaveStatus(localSaved ? "saved" : "error");
-    showToast(t("firebaseSyncFailed", { error: syncError }));
+    showToast(t("firebaseSyncFailed", { error: syncError }), { duration: 4200 });
   }
   scheduleHideSaveStatus();
 }
@@ -330,8 +547,9 @@ async function initializeFirebaseSync() {
       else syncError = "";
     } catch (error) {
       syncError = error instanceof Error ? error.message : t("unknownError");
-      showToast(t("firebaseLoadFailed", { error: syncError }));
+      showToast(t("firebaseLoadFailed", { error: syncError }), { duration: 4200 });
     }
+    if (!syncError) persistLastSyncedUid(firebaseSync.currentUser.uid);
   }
   updateAccountUi();
   maybeShowWelcome();
@@ -348,58 +566,204 @@ function maybeShowWelcome() {
   if (!choice.dismissed) dialogs.showWelcome();
 }
 
-async function handleAccountAction(button) {
-  if (!firebaseSync) return;
-  button.disabled = true;
-  try {
-    if (firebaseSync.currentUser) {
-      await firebaseSync.signOut();
-      syncError = "";
-      updateAccountUi();
-      showToast(t("signedOutNotice"));
-      return;
-    }
+function isPopupCancelledError(error) {
+  const code = error && typeof error === "object" ? error.code : "";
+  return code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request";
+}
 
+function isPopupBlockedError(error) {
+  const code = error && typeof error === "object" ? error.code : "";
+  return code === "auth/popup-blocked";
+}
+
+function formatSyncSummaryItems(progress) {
+  const summary = summarizeProgress(progress);
+  return [
+    t("syncSummaryLessons", { count: summary.completedLessons }),
+    t("syncSummaryChecklist", { count: summary.checkedItems }),
+    t("syncSummaryPortfolio", { count: summary.portfolioCount })
+  ];
+}
+
+function getConflictDescription(reason, account) {
+  if (reason === "different-account") {
+    return t("syncConflictDescriptionDifferentAccount", { account });
+  }
+  if (reason === "same-account-conflict") {
+    return t("syncConflictDescriptionDiverged", { account });
+  }
+  return t("syncConflictDescriptionGuest", { account });
+}
+
+function restoreAuthTriggerFocus(triggerButton, hadFocus) {
+  if (!hadFocus) return;
+  if (document.activeElement !== document.body && document.activeElement !== document.documentElement) return;
+  const fallback = triggerButton && triggerButton.isConnected && !triggerButton.hidden && !triggerButton.disabled
+    ? triggerButton
+    : document.getElementById("accountButton");
+  if (fallback && !fallback.hidden && !fallback.disabled) {
+    fallback.focus({ preventScroll: true });
+  }
+}
+
+async function startGoogleSignIn(triggerButton) {
+  if (!firebaseSync || authBusy) return;
+  const hadFocus = document.activeElement === triggerButton;
+  authBusy = "signin";
+  if (triggerButton) {
+    triggerButton.disabled = true;
+    triggerButton.setAttribute("aria-busy", "true");
+  }
+  updateAccountUi();
+
+  try {
     const initialProgress = cloneProgress(getProgress());
     const user = await firebaseSync.signIn();
     const replacingResetProgress = user.uid === resetCloudUid;
     const cloudProgress = replacingResetProgress ? null : await firebaseSync.getCloudProgress();
-    const replacingExistingProgress = !!cloudProgress && hasProgressData(initialProgress);
-    if (replacingExistingProgress) button.disabled = false;
-    if (replacingExistingProgress && !(await dialogs.requestCloudOverwriteConsent())) {
-      await firebaseSync.signOut();
-      syncError = "";
-      updateAccountUi();
-      showToast(t("syncCancelledNotice"));
-      if (document.getElementById("welcomeModal").dataset.restoreAfterSignIn === "true") {
-        dialogs.showWelcome(true);
+    const baselineProgress = replacingResetProgress ? null : firebaseSync.getBaselineProgress();
+    const strategy = resolveSignInSyncStrategy({
+      localProgress: initialProgress,
+      cloudProgress,
+      baselineProgress,
+      lastSyncedUid,
+      signingInUid: user.uid,
+      replacingResetProgress
+    });
+
+    let resolution = strategy.action;
+    if (strategy.prompt) {
+      if (triggerButton) {
+        triggerButton.disabled = false;
+        triggerButton.removeAttribute("aria-busy");
       }
-      return;
+      const accountLabel = getUserAccountLabel(user);
+      resolution = await dialogs.requestSyncConflictResolution({
+        description: getConflictDescription(strategy.reason, accountLabel),
+        cloudTitle: `${t("syncConflictCloudLabel")} (${accountLabel})`,
+        localItems: formatSyncSummaryItems(initialProgress),
+        cloudItems: formatSyncSummaryItems(cloudProgress),
+        recommended: strategy.recommended
+      });
+
+      if (!resolution) {
+        await firebaseSync.signOut();
+        syncError = "";
+        authBusy = "";
+        updateAccountUi();
+        showToast(t("syncCancelledNotice"));
+        if (document.getElementById("welcomeModal").dataset.restoreAfterSignIn === "true") {
+          dialogs.showWelcome(true);
+        }
+        return;
+      }
     }
 
-    const syncedProgress = await firebaseSync.loadProgress(
-      initialProgress,
-      replacingResetProgress || replacingExistingProgress,
-      !cloudProgress || hasProgressData(initialProgress)
-    );
-    if (syncedProgress) {
+    let successToast = t("signedInNotice");
+    if (resolution === "already-in-sync") {
+      firebaseSync.adoptCloudProgress(cloudProgress);
+    } else if (resolution === "use-cloud") {
+      const adopted = firebaseSync.adoptCloudProgress(cloudProgress) || cloudProgress;
       state = {
         ...state,
-        progress: applySyncedProgress(initialProgress, getProgress(), syncedProgress)
+        progress: cloneProgress(adopted)
       };
       saveLocalState();
       syncViewAfterExternalProgressUpdate();
+      successToast = strategy.prompt ? t("syncedUsingCloudNotice") : t("signedInNotice");
+    } else {
+      const replaceCloud = resolution === "replace-cloud" || resolution === "upload-local";
+      const useBaseline = resolution === "three-way-merge";
+      const syncedProgress = await firebaseSync.loadProgress(
+        initialProgress,
+        replaceCloud,
+        useBaseline
+      );
+      if (syncedProgress) {
+        state = {
+          ...state,
+          progress: applySyncedProgress(initialProgress, getProgress(), syncedProgress)
+        };
+        saveLocalState();
+        syncViewAfterExternalProgressUpdate();
+      }
+      if (replacingResetProgress) clearCloudReset();
+      if (resolution === "merge" || resolution === "three-way-merge") {
+        successToast = t("syncedMergedNotice");
+      } else if (resolution === "replace-cloud" && cloudProgress && !replacingResetProgress) {
+        successToast = t("syncedReplacedCloudNotice");
+      }
     }
-    if (replacingResetProgress) clearCloudReset();
+
+    persistLastSyncedUid(user.uid);
     syncError = "";
+    authBusy = "";
     updateAccountUi();
-    showToast(t("signedInNotice"));
+    showToast(successToast);
   } catch (error) {
+    if (isPopupCancelledError(error)) {
+      return;
+    }
+    if (isPopupBlockedError(error)) {
+      showToast(t("popupBlockedNotice"), { duration: 4500 });
+      return;
+    }
     syncError = error instanceof Error ? error.message : t("unknownError");
     updateAccountUi();
-    showToast(t("syncProgressFailed", { error: syncError }));
+    showToast(t("syncProgressFailed", { error: syncError }), { duration: 4200 });
   } finally {
-    button.disabled = false;
+    authBusy = "";
+    if (triggerButton) {
+      triggerButton.disabled = false;
+      triggerButton.removeAttribute("aria-busy");
+    }
+    updateAccountUi();
+    restoreAuthTriggerFocus(triggerButton, hadFocus);
+  }
+}
+
+async function performSignOut({ clearLocal = false } = {}) {
+  if (!firebaseSync?.currentUser || authBusy) return;
+  const previousUid = firebaseSync.currentUser.uid;
+  authBusy = "signout";
+  updateAccountUi();
+
+  try {
+    await flushPendingSaveAsync();
+    await firebaseSync.signOut();
+    if (clearLocal) {
+      state = { ...state, schemaVersion: 1, progress: createDefaultProgress() };
+      saveLocalState();
+      firebaseSync.clearBaseline(previousUid);
+      clearStoredLastSyncedUid();
+      syncViewAfterExternalProgressUpdate();
+    } else {
+      persistLastSyncedUid(previousUid);
+    }
+    syncError = "";
+    showToast(t(clearLocal ? "signedOutClearedNotice" : "signedOutNotice"));
+  } catch (error) {
+    syncError = error instanceof Error ? error.message : t("unknownError");
+    showToast(t("syncProgressFailed", { error: syncError }), { duration: 4200 });
+  } finally {
+    authBusy = "";
+    updateAccountUi();
+    document.getElementById("accountButton")?.focus({ preventScroll: true });
+  }
+}
+
+async function retryCloudSync() {
+  if (!firebaseSync?.currentUser || authBusy) return;
+  authBusy = "retry";
+  syncSaving = true;
+  updateAccountUi();
+  try {
+    await saveProgress();
+    if (!syncError) showToast(t("synced"));
+  } finally {
+    authBusy = "";
+    syncSaving = false;
+    updateAccountUi();
   }
 }
 
@@ -412,12 +776,12 @@ function esc(value) {
     .replace(/'/g, "&#39;");
 }
 
-function showToast(message) {
+function showToast(message, { duration = 2600 } = {}) {
   const toast = document.getElementById("toast");
   toast.textContent = message;
   toast.classList.add("show");
   clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => toast.classList.remove("show"), 2600);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), duration);
 }
 
 function openPortfolioModal(editId) {
@@ -604,20 +968,32 @@ async function init() {
     }
   });
   const topbarTools = document.getElementById("topbarTools");
+  const accountMenu = document.getElementById("accountMenu");
   const wideToolbar = window.matchMedia("(min-width: 1560px)");
   const syncToolsLayout = () => {
     topbarTools.open = wideToolbar.matches;
   };
   syncToolsLayout();
   wideToolbar.addEventListener("change", syncToolsLayout);
+  topbarTools.addEventListener("toggle", () => {
+    if (topbarTools.open && !wideToolbar.matches) closeAccountMenu();
+  });
   document.addEventListener("click", event => {
     if (!(event.target instanceof Node) || !topbarTools.contains(event.target)) {
       closeToolsMenu();
+    }
+    if (!(event.target instanceof Node) || !accountMenu?.contains(event.target)) {
+      closeAccountMenu();
     }
   });
   document.addEventListener("keydown", event => {
     if (event.key !== "Escape") return;
     if (document.querySelector(".modal-backdrop.open")) return;
+    const accountMenuPanel = document.getElementById("accountMenuPanel");
+    if (accountMenuPanel && !accountMenuPanel.hidden) {
+      closeAccountMenu({ restoreFocus: true });
+      return;
+    }
     if (sidebar.classList.contains("open")) {
       closeMobileMenu();
       document.getElementById("menuToggle").focus();
@@ -655,13 +1031,32 @@ async function init() {
     scheduleSave();
     closeToolsMenu({ restoreFocus: true });
   });
-  document.getElementById("accountButton").addEventListener("click", event => {
-    void handleAccountAction(event.currentTarget);
+  document.getElementById("accountButton").addEventListener("click", () => {
+    toggleAccountMenu();
+  });
+  document.getElementById("signInMenuButton").addEventListener("click", () => {
+    closeAccountMenu();
+    void startGoogleSignIn(document.getElementById("accountButton"));
+  });
+  document.getElementById("retrySyncButton").addEventListener("click", () => {
+    closeAccountMenu();
+    void retryCloudSync();
+  });
+  document.getElementById("signOutMenuButton").addEventListener("click", async () => {
+    closeAccountMenu();
+    const user = firebaseSync?.currentUser;
+    if (!user) return;
+    const result = await dialogs.requestSignOutConfirmation({
+      description: t("signOutModalDescription", { account: getUserAccountLabel(user) })
+    });
+    if (result?.confirmed) {
+      await performSignOut({ clearLocal: result.clearLocal });
+    }
   });
   document.getElementById("welcomeLoginButton").addEventListener("click", async event => {
     const button = event.currentTarget;
     document.getElementById("welcomeModal").dataset.restoreAfterSignIn = "true";
-    await handleAccountAction(button);
+    await startGoogleSignIn(button);
     if (firebaseSync?.currentUser || !document.getElementById("welcomeModal").classList.contains("open")) {
       dialogs.dismissWelcome();
     }
@@ -753,6 +1148,7 @@ async function init() {
   document.getElementById("confirmReset").addEventListener("click", () => {
     state = { ...state, schemaVersion: 1, progress: createDefaultProgress() };
     if (firebaseSync?.currentUser) markCloudReset(firebaseSync.currentUser.uid);
+    else clearStoredLastSyncedUid();
     applyTheme();
     scheduleSave();
     dialogs.closeDialog(document.getElementById("resetModal"), { restoreFocus: false });

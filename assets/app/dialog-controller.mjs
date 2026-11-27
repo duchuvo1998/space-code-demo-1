@@ -146,33 +146,127 @@ export function createDialogController({ onWelcomeDismissed = () => {} } = {}) {
     closeWelcomeDialog = openAccessibleDialog(dialog, initialFocus, closeWelcomeWithoutChoice);
   }
 
-  function requestCloudOverwriteConsent() {
+  function requestSyncConflictResolution({
+    description = "",
+    cloudTitle = "",
+    localItems = [],
+    cloudItems = [],
+    recommended = "merge"
+  } = {}) {
     const welcomeWasOpen = document.getElementById("welcomeModal").classList.contains("open");
     if (welcomeWasOpen) {
       closeWelcomeWithoutChoice({ restoreFocus: false });
     }
 
     return new Promise(resolve => {
-      const dialog = document.getElementById("cloudOverwriteModal");
-      const cancelButton = dialog.querySelector('[data-cloud-overwrite-choice="cancel"]');
-      let closeDialog;
-      const finish = approved => {
-        dialog.removeEventListener("click", handleClick);
-        closeDialog?.({
-          restoreFocus: approved || !welcomeWasOpen,
-          focusTarget: approved && welcomeWasOpen ? document.getElementById("accountButton") : null
+      const dialog = document.getElementById("syncConflictModal");
+      const descriptionEl = document.getElementById("syncConflictDescription");
+      const cloudTitleEl = document.getElementById("syncSummaryCloudTitle");
+      const localListEl = document.getElementById("syncSummaryLocalList");
+      const cloudListEl = document.getElementById("syncSummaryCloudList");
+      const cancelButton = document.getElementById("cancelSyncConflict");
+      const confirmButton = document.getElementById("confirmSyncConflict");
+      const radios = [...dialog.querySelectorAll('input[name="syncConflictChoice"]')];
+
+      if (descriptionEl) descriptionEl.textContent = description;
+      if (cloudTitleEl && cloudTitle) cloudTitleEl.textContent = cloudTitle;
+      if (localListEl) {
+        localListEl.innerHTML = "";
+        localItems.forEach(text => {
+          const item = document.createElement("li");
+          item.textContent = text;
+          localListEl.appendChild(item);
         });
-        resolve(approved);
+      }
+      if (cloudListEl) {
+        cloudListEl.innerHTML = "";
+        cloudItems.forEach(text => {
+          const item = document.createElement("li");
+          item.textContent = text;
+          cloudListEl.appendChild(item);
+        });
+      }
+
+      dialog.querySelectorAll("[data-recommended-for]").forEach(badge => {
+        badge.hidden = badge.dataset.recommendedFor !== recommended;
+      });
+
+      const defaultRadio = radios.find(radio => radio.value === recommended) || radios[0];
+      radios.forEach(radio => {
+        radio.checked = radio === defaultRadio;
+      });
+
+      const updateConfirmStyle = () => {
+        const selected = radios.find(radio => radio.checked)?.value || recommended;
+        confirmButton.classList.toggle("btn-danger", selected === "replace-cloud");
+        confirmButton.classList.toggle("btn-primary", selected !== "replace-cloud");
+      };
+      updateConfirmStyle();
+
+      let closeDialog;
+      const finish = choice => {
+        dialog.removeEventListener("click", handleClick);
+        dialog.removeEventListener("change", updateConfirmStyle);
+        closeDialog?.({
+          restoreFocus: Boolean(choice) || !welcomeWasOpen,
+          focusTarget: Boolean(choice) && welcomeWasOpen ? document.getElementById("accountButton") : null
+        });
+        resolve(choice);
       };
       const handleClick = event => {
+        if (event.target === dialog) {
+          finish(null);
+          return;
+        }
         if (!(event.target instanceof Element)) return;
-        const choice = event.target.closest("[data-cloud-overwrite-choice]");
-        if (choice) finish(choice.dataset.cloudOverwriteChoice === "replace");
-        else if (event.target === dialog) finish(false);
+        if (event.target.closest("#cancelSyncConflict")) {
+          finish(null);
+        } else if (event.target.closest("#confirmSyncConflict")) {
+          const selected = radios.find(radio => radio.checked)?.value || recommended;
+          finish(selected);
+        }
       };
 
       dialog.addEventListener("click", handleClick);
-      closeDialog = openAccessibleDialog(dialog, cancelButton, () => finish(false));
+      dialog.addEventListener("change", updateConfirmStyle);
+      closeDialog = openAccessibleDialog(dialog, defaultRadio || cancelButton, () => finish(null));
+    });
+  }
+
+  function requestSignOutConfirmation({ description = "" } = {}) {
+    return new Promise(resolve => {
+      const dialog = document.getElementById("signOutModal");
+      const descriptionEl = document.getElementById("signOutModalDescription");
+      const clearLocalCheckbox = document.getElementById("signOutClearLocal");
+      const cancelButton = document.getElementById("cancelSignOut");
+
+      if (descriptionEl) descriptionEl.textContent = description;
+      if (clearLocalCheckbox) clearLocalCheckbox.checked = false;
+
+      let closeDialog;
+      const finish = result => {
+        dialog.removeEventListener("click", handleClick);
+        closeDialog?.({
+          restoreFocus: true,
+          focusTarget: document.getElementById("accountButton")
+        });
+        resolve(result);
+      };
+      const handleClick = event => {
+        if (event.target === dialog) {
+          finish(null);
+          return;
+        }
+        if (!(event.target instanceof Element)) return;
+        if (event.target.closest("#cancelSignOut")) {
+          finish(null);
+        } else if (event.target.closest("#confirmSignOut")) {
+          finish({ confirmed: true, clearLocal: Boolean(clearLocalCheckbox?.checked) });
+        }
+      };
+
+      dialog.addEventListener("click", handleClick);
+      closeDialog = openAccessibleDialog(dialog, cancelButton, () => finish(null));
     });
   }
 
@@ -181,7 +275,8 @@ export function createDialogController({ onWelcomeDismissed = () => {} } = {}) {
     closeWelcomeWithoutChoice,
     dismissWelcome,
     openDialog,
-    requestCloudOverwriteConsent,
+    requestSignOutConfirmation,
+    requestSyncConflictResolution,
     showWelcome
   };
 }

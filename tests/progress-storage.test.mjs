@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  clearLastSyncedUid,
   clearPendingCloudReset,
   createDefaultProgress,
+  loadLastSyncedUid,
   loadPendingCloudReset,
   loadProgressState,
   loadWelcomeChoice,
+  saveLastSyncedUid,
   savePendingCloudReset,
   saveProgressState,
   saveWelcomeChoice
@@ -80,6 +83,11 @@ test("persists progress and browser choice flags", () => {
   assert.equal(loadPendingCloudReset(storage).uid, "user-1");
   assert.equal(clearPendingCloudReset(storage).saved, true);
   assert.equal(loadPendingCloudReset(storage).uid, "");
+  assert.equal(loadLastSyncedUid(storage).uid, "");
+  assert.equal(saveLastSyncedUid("user-1", storage).saved, true);
+  assert.equal(loadLastSyncedUid(storage).uid, "user-1");
+  assert.equal(clearLastSyncedUid(storage).saved, true);
+  assert.equal(loadLastSyncedUid(storage).uid, "");
 });
 
 test("reports browser storage failures to the caller", () => {

@@ -26,6 +26,146 @@ function equalValue(left, right) {
     );
 }
 
+function normalizeMapForComparison(map, keepEntry) {
+  const normalized = {};
+  if (!isRecord(map)) return normalized;
+  for (const key of Object.keys(map).sort()) {
+    if (keepEntry(map[key])) {
+      normalized[key] = map[key];
+    }
+  }
+  return normalized;
+}
+
+function normalizeProgressForComparison(progress) {
+  const source = isRecord(progress) ? progress : {};
+  const normalized = {};
+  const reservedFields = new Set([
+    "checklist", "lessonsDone", "notes", "completedLessons", "portfolio", "theme"
+  ]);
+
+  normalized.checklist = normalizeMapForComparison(source.checklist, value => value === true);
+  normalized.lessonsDone = normalizeMapForComparison(source.lessonsDone, value => Boolean(value));
+  normalized.notes = normalizeMapForComparison(
+    source.notes,
+    value => typeof value === "string" && value.length > 0
+  );
+  normalized.completedLessons = [
+    ...new Set(Array.isArray(source.completedLessons) ? source.completedLessons.filter(Boolean) : [])
+  ].sort();
+  normalized.portfolio = (Array.isArray(source.portfolio) ? source.portfolio : [])
+    .filter(item => isRecord(item))
+    .slice()
+    .sort((left, right) => String(left.id || "").localeCompare(String(right.id || "")));
+  normalized.theme = source.theme === "dark" ? "dark" : "light";
+
+  for (const key of Object.keys(source).sort()) {
+    if (!reservedFields.has(key) && source[key] !== undefined) {
+      normalized[key] = source[key];
+    }
+  }
+  return normalized;
+}
+
+export function areProgressEqual(left, right) {
+  return equalValue(
+    normalizeProgressForComparison(left),
+    normalizeProgressForComparison(right)
+  );
+}
+
+export function summarizeProgress(progress) {
+  const source = isRecord(progress) ? progress : {};
+  const completed = new Set(
+    Array.isArray(source.completedLessons) ? source.completedLessons.filter(Boolean) : []
+  );
+  if (isRecord(source.lessonsDone)) {
+    for (const [id, date] of Object.entries(source.lessonsDone)) {
+      if (date) completed.add(id);
+    }
+  }
+  const checkedItems = isRecord(source.checklist)
+    ? Object.values(source.checklist).filter(value => value === true).length
+    : 0;
+  const notesCount = isRecord(source.notes)
+    ? Object.values(source.notes).filter(value => typeof value === "string" && value.trim().length > 0).length
+    : 0;
+  const portfolioCount = Array.isArray(source.portfolio) ? source.portfolio.length : 0;
+
+  return {
+    completedLessons: completed.size,
+    checkedItems,
+    notesCount,
+    portfolioCount
+  };
+}
+
+function hasOverlappingContentConflict(baseline, local, cloud) {
+  const localChanges = diffProgress(baseline, local);
+  const cloudChanges = diffProgress(baseline, cloud);
+
+  const localNotes = localChanges.maps.notes || {};
+  const cloudNotes = cloudChanges.maps.notes || {};
+  for (const lessonId of Object.keys(localNotes)) {
+    if (Object.hasOwn(cloudNotes, lessonId) && !equalValue(localNotes[lessonId], cloudNotes[lessonId])) {
+      return true;
+    }
+  }
+
+  for (const itemId of Object.keys(localChanges.portfolio)) {
+    if (
+      Object.hasOwn(cloudChanges.portfolio, itemId)
+      && !equalValue(localChanges.portfolio[itemId], cloudChanges.portfolio[itemId])
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+export function resolveSignInSyncStrategy({
+  localProgress,
+  cloudProgress,
+  baselineProgress = null,
+  lastSyncedUid = "",
+  signingInUid = "",
+  replacingResetProgress = false
+}) {
+  if (replacingResetProgress) {
+    return { action: "replace-cloud", prompt: false, reason: "pending-reset", recommended: "replace-cloud" };
+  }
+  if (!cloudProgress) {
+    return { action: "upload-local", prompt: false, reason: "empty-cloud", recommended: "replace-cloud" };
+  }
+  if (!hasProgressData(localProgress)) {
+    return { action: "use-cloud", prompt: false, reason: "empty-local", recommended: "use-cloud" };
+  }
+  if (areProgressEqual(localProgress, cloudProgress)) {
+    return { action: "already-in-sync", prompt: false, reason: "identical", recommended: "use-cloud" };
+  }
+
+  const sameAccount = Boolean(lastSyncedUid && signingInUid && lastSyncedUid === signingInUid);
+  if (sameAccount && isRecord(baselineProgress)) {
+    if (areProgressEqual(localProgress, baselineProgress)) {
+      return { action: "use-cloud", prompt: false, reason: "cloud-newer", recommended: "use-cloud" };
+    }
+    if (areProgressEqual(cloudProgress, baselineProgress)) {
+      return { action: "replace-cloud", prompt: false, reason: "local-newer", recommended: "replace-cloud" };
+    }
+    if (!hasOverlappingContentConflict(baselineProgress, localProgress, cloudProgress)) {
+      return { action: "three-way-merge", prompt: false, reason: "same-account-auto-merge", recommended: "merge" };
+    }
+    return { action: "prompt", prompt: true, reason: "same-account-conflict", recommended: "merge" };
+  }
+
+  if (lastSyncedUid && signingInUid && lastSyncedUid !== signingInUid) {
+    return { action: "prompt", prompt: true, reason: "different-account", recommended: "use-cloud" };
+  }
+
+  return { action: "prompt", prompt: true, reason: "local-and-cloud-exist", recommended: "merge" };
+}
+
 function setOwnProperty(target, key, value) {
     Object.defineProperty(target, key, {
       configurable: true,
@@ -164,11 +304,31 @@ export function mergeProgress(localProgress, cloudProgress) {
   const localIsActive = hasProgressData(local);
   const merged = localIsActive ? { ...cloud, ...local } : { ...local, ...cloud };
 
-  for (const key of ["checklist", "lessonsDone", "notes"]) {
-    const localMap = isRecord(local[key]) ? local[key] : {};
-    const cloudMap = isRecord(cloud[key]) ? cloud[key] : {};
-    merged[key] = { ...cloudMap, ...localMap };
+  const localChecklist = isRecord(local.checklist) ? local.checklist : {};
+  const cloudChecklist = isRecord(cloud.checklist) ? cloud.checklist : {};
+  const mergedChecklist = { ...cloudChecklist, ...localChecklist };
+  for (const key of new Set([...Object.keys(cloudChecklist), ...Object.keys(localChecklist)])) {
+    if (cloudChecklist[key] === true || localChecklist[key] === true) {
+      mergedChecklist[key] = true;
+    }
   }
+  merged.checklist = mergedChecklist;
+
+  const localLessonsDone = isRecord(local.lessonsDone) ? local.lessonsDone : {};
+  const cloudLessonsDone = isRecord(cloud.lessonsDone) ? cloud.lessonsDone : {};
+  merged.lessonsDone = { ...cloudLessonsDone, ...localLessonsDone };
+
+  const localNotes = isRecord(local.notes) ? local.notes : {};
+  const cloudNotes = isRecord(cloud.notes) ? cloud.notes : {};
+  const mergedNotes = { ...cloudNotes, ...localNotes };
+  for (const key of Object.keys(cloudNotes)) {
+    const localNote = localNotes[key];
+    const cloudNote = cloudNotes[key];
+    if (typeof cloudNote === "string" && cloudNote.length > 0 && typeof localNote === "string" && localNote.length === 0) {
+      mergedNotes[key] = cloudNote;
+    }
+  }
+  merged.notes = mergedNotes;
 
   merged.completedLessons = [...new Set([
     ...(Array.isArray(cloud.completedLessons) ? cloud.completedLessons : []),

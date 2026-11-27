@@ -49,7 +49,20 @@ function readBaseline(uid) {
 }
 
 function saveBaseline(uid, progress) {
-  localStorage.setItem(baselineKey(uid), JSON.stringify(progress));
+  try {
+    localStorage.setItem(baselineKey(uid), JSON.stringify(progress));
+  } catch {
+    // Ignore storage failures when updating the local sync baseline.
+  }
+}
+
+function removeBaseline(uid) {
+  if (!uid) return;
+  try {
+    localStorage.removeItem(baselineKey(uid));
+  } catch {
+    // Ignore storage failures when clearing a local sync baseline.
+  }
 }
 
 export async function createFirebaseSync() {
@@ -156,6 +169,22 @@ export async function createFirebaseSync() {
       return currentUser;
     },
     getCloudProgress,
+    getBaselineProgress() {
+      if (!currentUser) return null;
+      try {
+        return readBaseline(currentUser.uid);
+      } catch {
+        return null;
+      }
+    },
+    adoptCloudProgress(cloudProgress) {
+      if (!currentUser || !isRecord(cloudProgress)) return null;
+      saveBaseline(currentUser.uid, cloudProgress);
+      return cloudProgress;
+    },
+    clearBaseline(uid = currentUser?.uid) {
+      removeBaseline(uid);
+    },
     loadProgress: synchronizeProgress,
     async saveProgress(progress, replace = false) {
       return synchronizeProgress(progress, replace);
