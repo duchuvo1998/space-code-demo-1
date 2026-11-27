@@ -1,6 +1,7 @@
 export function createDialogController({ onWelcomeDismissed = () => {} } = {}) {
   let closeWelcomeDialog = null;
   let welcomeBackdropHandler = null;
+  const activeDialogs = new Map();
 
   function openAccessibleDialog(dialog, initialFocus, onCancel) {
     const previousFocus = document.activeElement;
@@ -10,8 +11,15 @@ export function createDialogController({ onWelcomeDismissed = () => {} } = {}) {
     inertSiblings.forEach(([element]) => { element.inert = true; });
 
     const getFocusableElements = () => [...dialog.querySelectorAll(
-      'a[href]:not([hidden]), button:not(:disabled):not([hidden]), input:not(:disabled):not([hidden]), select:not(:disabled):not([hidden]), textarea:not(:disabled):not([hidden]), [tabindex]:not([tabindex="-1"]):not([hidden])'
-    )].filter(element => !element.closest("[inert]"));
+      'a[href]:not([hidden]), button:not(:disabled):not([hidden]), input:not([type="hidden"]):not(:disabled):not([hidden]), select:not(:disabled):not([hidden]), textarea:not(:disabled):not([hidden]), [tabindex]:not([tabindex="-1"]):not([hidden])'
+    )].filter(element => {
+      if (element.closest("[inert], [hidden]")) return false;
+      if (typeof getComputedStyle === "function") {
+        const style = getComputedStyle(element);
+        if (style.display === "none" || style.visibility === "hidden") return false;
+      }
+      return true;
+    });
     const handleKeydown = event => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -43,7 +51,7 @@ export function createDialogController({ onWelcomeDismissed = () => {} } = {}) {
     requestAnimationFrame(() => {
       if (!dialog.classList.contains("open")) return;
       const target = typeof initialFocus === "function" ? initialFocus() : initialFocus;
-      (target && !target.hidden && !target.disabled ? target : getFocusableElements()[0])?.focus();
+      (target && !target.hidden && !target.disabled ? target : getFocusableElements()[0] || dialog)?.focus();
     });
 
     return ({ restoreFocus = true, focusTarget = null } = {}) => {
@@ -56,11 +64,54 @@ export function createDialogController({ onWelcomeDismissed = () => {} } = {}) {
       const fallbackFocus = previousFocus === document.body || previousFocus === document.documentElement
         ? document.getElementById("mainContent")
         : previousFocus;
-      const target = focusTarget || fallbackFocus;
+      let target = focusTarget || fallbackFocus;
+      const closedDetails = target instanceof HTMLElement ? target.closest("details:not([open])") : null;
+      if (closedDetails) {
+        target = closedDetails.querySelector("summary") || document.getElementById("mainContent");
+      }
       if (target instanceof HTMLElement && target.isConnected && !target.disabled) {
         target.focus({ preventScroll: true });
       }
     };
+  }
+
+  function openDialog(dialog, { initialFocus = null, onCancel = null, closeOnBackdrop = true } = {}) {
+    if (!dialog) return null;
+    if (activeDialogs.has(dialog)) return activeDialogs.get(dialog);
+
+    let closeFn = null;
+    const handleCancel = () => {
+      if (onCancel) {
+        onCancel();
+        return;
+      }
+      closeFn?.();
+    };
+    const handleBackdropClick = event => {
+      if (closeOnBackdrop && event.target === dialog) {
+        handleCancel();
+      }
+    };
+    dialog.addEventListener("click", handleBackdropClick);
+    const rawClose = openAccessibleDialog(dialog, initialFocus, handleCancel);
+    closeFn = (options = {}) => {
+      if (!activeDialogs.has(dialog)) return;
+      activeDialogs.delete(dialog);
+      dialog.removeEventListener("click", handleBackdropClick);
+      rawClose(options);
+    };
+    activeDialogs.set(dialog, closeFn);
+    return closeFn;
+  }
+
+  function closeDialog(dialog, options) {
+    if (!dialog) return;
+    const closeFn = activeDialogs.get(dialog);
+    if (closeFn) {
+      closeFn(options);
+    } else {
+      dialog.classList.remove("open");
+    }
   }
 
   function closeWelcomeWithoutChoice(options) {
@@ -126,8 +177,10 @@ export function createDialogController({ onWelcomeDismissed = () => {} } = {}) {
   }
 
   return {
+    closeDialog,
     closeWelcomeWithoutChoice,
     dismissWelcome,
+    openDialog,
     requestCloudOverwriteConsent,
     showWelcome
   };

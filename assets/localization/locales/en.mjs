@@ -91,6 +91,7 @@ export default {
   lessonNotFound: "Lesson not found",
   lessonMissingFromManifest: "This lesson is not listed in the course manifest.",
   home: "Go to home",
+  brandHomeAria: "Canva + Gemini 8 Weeks — Go to home",
   loadingLesson: "Loading lesson: {title}",
   unableToLoadLesson: "Unable to load lesson",
   retryLessonDescription: "Could not load {title}. Check your connection and try again.",
@@ -159,5 +160,14 @@ export default {
   invalidJsonFile: "Invalid JSON file.",
   invalidLink: "Links must start with http or https.",
   searchResults: "Search results",
-  noSearchResults: "No lessons or terms found."
+  noSearchResults: "No lessons or terms found.",
+  copyPrompt: "Copy",
+  copyPromptAria: "Copy prompt template",
+  copiedPrompt: "Copied",
+  copiedPromptToast: "Prompt template copied.",
+  copyPromptFailed: "Could not copy automatically. Press Ctrl+C or Cmd+C.",
+  notesAutoSave: "Auto-saved in browser",
+  notesSaving: "Saving notes...",
+  notesSaved: "Notes saved",
+  notesSaveError: "Unable to save notes"
 };

@@ -16,8 +16,135 @@ export function createCourseViews({
   let lessonRenderSequence = 0;
   let weekFilter = "all";
   let lessonFilter = "all";
+  let preserveActiveLessonScroll = false;
+  let userScrolledActiveLesson = false;
+  let cleanupLessonScrollListeners = null;
   const expandedWeeks = new Set();
   const collapsedWeeks = new Set();
+
+  function scrollToTop() {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }
+
+  function detachLessonScrollTracking() {
+    if (cleanupLessonScrollListeners) {
+      cleanupLessonScrollListeners();
+      cleanupLessonScrollListeners = null;
+    }
+  }
+
+  function trackManualScrollDuringLessonLoad(preserveScroll) {
+    detachLessonScrollTracking();
+    preserveActiveLessonScroll = preserveScroll;
+    userScrolledActiveLesson = false;
+    if (preserveScroll) return;
+
+    const markUserScrolled = () => {
+      userScrolledActiveLesson = true;
+      detachLessonScrollTracking();
+    };
+    const handleKeydown = event => {
+      if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Space", " ", "End", "Home"].includes(event.key)) {
+        markUserScrolled();
+      }
+    };
+    window.addEventListener("wheel", markUserScrolled, { passive: true, once: true });
+    window.addEventListener("touchmove", markUserScrolled, { passive: true, once: true });
+    window.addEventListener("keydown", handleKeydown, { passive: true });
+    cleanupLessonScrollListeners = () => {
+      window.removeEventListener("wheel", markUserScrolled);
+      window.removeEventListener("touchmove", markUserScrolled);
+      window.removeEventListener("keydown", handleKeydown);
+    };
+  }
+
+  function keepLessonAtTopIfUnscrolled() {
+    if (preserveActiveLessonScroll || userScrolledActiveLesson) return;
+    if (window.scrollY > 0 || document.documentElement.scrollTop > 0) {
+      scrollToTop();
+    }
+  }
+
+  function getLessonUiLabels() {
+    return {
+      copyPrompt: t("copyPrompt"),
+      copyPromptAria: t("copyPromptAria"),
+      copiedPrompt: t("copiedPrompt"),
+      notesAutoSave: t("notesAutoSave"),
+      notesSaving: t("notesSaving"),
+      notesSaved: t("notesSaved"),
+      notesSaveError: t("notesSaveError")
+    };
+  }
+
+  function sendLessonProgress(lessonId) {
+    if (!lessonFrame?.contentWindow) return false;
+    const targetId = lessonId || lessonFrame.dataset.lessonId;
+    if (!targetId || lessonFrame.dataset.lessonId !== targetId) return false;
+    const lesson = getLessonById(targetId);
+    if (!lesson) return false;
+
+    const progress = getProgress();
+    const checklist = {};
+    (lesson.checklistIds || []).forEach(id => {
+      checklist[id] = !!progress.checklist[id];
+    });
+    const data = {
+      checklist,
+      notes: progress.notes[targetId] || "",
+      completed: progress.completedLessons.includes(targetId) || !!progress.lessonsDone[targetId],
+      date: typeof progress.lessonsDone[targetId] === "string" ? progress.lessonsDone[targetId] : ""
+    };
+    lessonFrame.contentWindow.postMessage(
+      { type: "LOAD_LESSON_PROGRESS", lessonId: targetId, data, labels: getLessonUiLabels() },
+      window.location.origin
+    );
+    return true;
+  }
+
+  function syncLessonUi() {
+    if (!lessonFrame?.contentWindow || !lessonFrame.dataset.lessonId) return;
+    lessonFrame.contentWindow.postMessage(
+      { type: "UPDATE_LESSON_UI", lessonId: lessonFrame.dataset.lessonId, labels: getLessonUiLabels() },
+      window.location.origin
+    );
+  }
+
+  function notifyLessonSaveStatus(status) {
+    if (!lessonFrame?.contentWindow || !lessonFrame.dataset.lessonId) return;
+    lessonFrame.contentWindow.postMessage(
+      { type: "LESSON_SAVE_STATUS", lessonId: lessonFrame.dataset.lessonId, status },
+      window.location.origin
+    );
+  }
+
+  function syncLessonFrameHeight(frame) {
+    try {
+      const doc = frame?.contentDocument;
+      if (!doc?.body) return;
+      const bodyStyle = frame.contentWindow.getComputedStyle(doc.body);
+      const paddingBottom = parseFloat(bodyStyle.paddingBottom) || 0;
+      const marginTop = parseFloat(bodyStyle.marginTop) || 0;
+      const marginBottom = parseFloat(bodyStyle.marginBottom) || 0;
+      let maxBottom = doc.body.getBoundingClientRect().height + marginTop + marginBottom;
+      for (const child of doc.body.children) {
+        const rect = child.getBoundingClientRect();
+        if (rect.height === 0 && rect.width === 0) continue;
+        const childStyle = frame.contentWindow.getComputedStyle(child);
+        const childMarginBottom = parseFloat(childStyle.marginBottom) || 0;
+        const bottom = rect.bottom + frame.contentWindow.scrollY + childMarginBottom + paddingBottom + marginBottom;
+        if (bottom > maxBottom) maxBottom = bottom;
+      }
+      const height = Math.max(320, Math.ceil(maxBottom) + 12);
+      if (Number.isFinite(height) && height <= 200000) {
+        frame.style.height = `${height}px`;
+      }
+    } catch {
+      // Fall back to postMessage LESSON_RESIZE when direct measurement is unavailable.
+    }
+  }
 
   function getLessonById(id) {
     const manifest = getManifest();
@@ -100,20 +227,28 @@ export function createCourseViews({
         expandedWeeks.add(weekNumber);
       }
       renderSidebar();
+      sidebar.querySelector?.(`[data-week-toggle="${weekNumber}"]`)?.focus({ preventScroll: true });
     }));
   }
 
   function handleRoute(event) {
     const button = event.currentTarget;
     const route = button.dataset.route;
-    if (route === "dashboard") location.hash = "#course/canva-gemini/dashboard";
-    if (route === "portfolio") location.hash = "#course/canva-gemini/portfolio";
+    let nextHash = location.hash;
+    if (route === "dashboard") nextHash = "#course/canva-gemini/dashboard";
+    if (route === "portfolio") nextHash = "#course/canva-gemini/portfolio";
     if (route === "week") {
       const weekId = String(button.dataset.week).startsWith("w") ? button.dataset.week : `w${button.dataset.week}`;
-      location.hash = `#course/canva-gemini/week/${weekId}`;
+      nextHash = `#course/canva-gemini/week/${weekId}`;
     }
-    if (route === "lesson") location.hash = `#course/canva-gemini/lesson/${button.dataset.id}`;
+    if (route === "lesson") nextHash = `#course/canva-gemini/lesson/${button.dataset.id}`;
     closeMobileMenu();
+    document.getElementById("searchResults")?.remove();
+    if (location.hash === nextHash) {
+      scrollToTop();
+    } else {
+      location.hash = nextHash;
+    }
   }
 
   function renderDashboard() {
@@ -180,20 +315,117 @@ export function createCourseViews({
     app.querySelectorAll("[data-route]").forEach(button => button.addEventListener("click", handleRoute));
   }
 
-  async function renderLesson(lessonId, renderSequence = ++lessonRenderSequence) {
+  function buildLessonToolbarInnerHtml({ lesson, lessonIndex, totalLessons, lessonDay, previousLesson, nextLesson }) {
+    return `
+      ${previousLesson ? `<button type="button" class="btn btn-sm" data-route="lesson" data-id="${escapeHtml(previousLesson.id)}">${t("previousLesson")}</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">${t("week", { number: lesson.weekNumber })}</button>`}
+      <div class="lesson-toolbar-title"><strong>${escapeHtml(lesson.title)}</strong><span>${t("lessonPosition", { current: lessonIndex + 1, total: totalLessons, week: lesson.weekNumber, day: lessonDay })}</span></div>
+      <details class="lesson-jump-menu">
+        <summary class="btn btn-sm">${t("lessonSections")} ${UI_ICONS.chevronDown}</summary>
+        <div class="lesson-jump-options">
+          <button type="button" data-lesson-jump="Hướng dẫn thực hành từng bước">${t("jumpPractice")}</button>
+          <button type="button" data-lesson-jump="Bài tập thực hành &amp; Sản phẩm đầu ra">${t("jumpExercises")}</button>
+          <button type="button" data-lesson-jump="Checklist hoàn thành đo lường được">${t("jumpChecklist")}</button>
+        </div>
+      </details>
+      ${nextLesson ? `<button type="button" class="btn btn-sm btn-primary" data-route="lesson" data-id="${escapeHtml(nextLesson.id)}">${t("nextLessonButton")}</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">${t("finishCourse")}</button>`}
+    `;
+  }
+
+  function buildLessonEndCardInnerHtml({ nextLesson }) {
+    return nextLesson
+      ? `<div><span class="eyebrow">${t("nextStep")}</span><h2>${t("afterLesson")}</h2><p>${escapeHtml(nextLesson.title)}</p></div><button type="button" class="btn btn-primary" data-route="lesson" data-id="${escapeHtml(nextLesson.id)}">${t("goToNextLesson")} <span aria-hidden="true">→</span></button>`
+      : `<div><span class="eyebrow">${t("lastLesson")}</span><h2>${t("endOfRoadmap")}</h2><p>${t("finishChecklist")}</p></div><button type="button" class="btn btn-primary" data-route="dashboard">${t("backToRoadmap")}</button>`;
+  }
+
+  function attachLessonShellListeners(container) {
+    container?.querySelectorAll("[data-route]").forEach(button => button.addEventListener("click", handleRoute));
+    container?.querySelectorAll("[data-lesson-jump]").forEach(button => button.addEventListener("click", () => {
+      userScrolledActiveLesson = true;
+      detachLessonScrollTracking();
+      const targetTitle = button.dataset.lessonJump;
+      const headings = [...(lessonFrame?.contentDocument?.querySelectorAll("body > .card > h2") || [])];
+      const targetHeading = headings.find(heading => heading.textContent.trim() === targetTitle);
+      const target = targetHeading?.closest(".card");
+      if (!target || !targetHeading) return;
+      const frameTop = lessonFrame.getBoundingClientRect().top + window.scrollY;
+      const targetTop = target.getBoundingClientRect().top;
+      const toolbarOffset = document.querySelector(".topbar").getBoundingClientRect().height +
+        app.querySelector(".lesson-toolbar").getBoundingClientRect().height + 12;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: Math.max(0, frameTop + targetTop - toolbarOffset), behavior: reduceMotion ? "auto" : "smooth" });
+      const jumpMenu = app.querySelector(".lesson-jump-menu");
+      if (jumpMenu) jumpMenu.open = false;
+      targetHeading.tabIndex = -1;
+      targetHeading.focus({ preventScroll: true });
+    }));
+  }
+
+  function refreshActiveLessonLocale() {
+    const hash = location.hash || "#course/canva-gemini/dashboard";
+    const lessonMatch = /^#course\/canva-gemini\/lesson\/([^/?]+)/.exec(hash);
+    if (!lessonMatch || !lessonFrame) return false;
+
+    const lessonId = decodeURIComponent(lessonMatch[1]);
+    if (lessonFrame.dataset.lessonId !== lessonId) return false;
+
+    const lesson = getLessonById(lessonId);
+    const manifest = getManifest();
+    const toolbar = app.querySelector(".lesson-toolbar");
+    const endCard = app.querySelector(".lesson-end-card");
+    if (!lesson || !manifest || !toolbar || !endCard) return false;
+
+    document.getElementById("searchResults")?.remove();
+    const lessonIndex = manifest.lessons.findIndex(item => item.id === lessonId);
+    const lessonDay = lesson.id.split("-d")[1] || "";
+    const previousLesson = lessonIndex > 0 ? manifest.lessons[lessonIndex - 1] : null;
+    const nextLesson = lessonIndex >= 0 && lessonIndex < manifest.lessons.length - 1 ? manifest.lessons[lessonIndex + 1] : null;
+
+    const jumpWasOpen = Boolean(toolbar.querySelector(".lesson-jump-menu")?.open);
+    toolbar.innerHTML = buildLessonToolbarInnerHtml({
+      lesson,
+      lessonIndex,
+      totalLessons: manifest.lessons.length,
+      lessonDay,
+      previousLesson,
+      nextLesson
+    });
+    if (jumpWasOpen) {
+      const jumpMenu = toolbar.querySelector(".lesson-jump-menu");
+      if (jumpMenu) jumpMenu.open = true;
+    }
+    attachLessonShellListeners(toolbar);
+
+    const loadingLabel = app.querySelector(".lesson-frame-loading > span:last-child");
+    if (loadingLabel) loadingLabel.textContent = t("loadingLessonContent");
+
+    endCard.innerHTML = buildLessonEndCardInnerHtml({ nextLesson });
+    attachLessonShellListeners(endCard);
+
+    renderSidebar();
+    syncLessonUi();
+    return true;
+  }
+
+  async function renderLesson(lessonId, renderSequence = ++lessonRenderSequence, { preserveScroll = false } = {}) {
     const manifest = getManifest();
     const lesson = getLessonById(lessonId);
     if (!lesson) {
+      lessonFrame = null;
+      detachLessonScrollTracking();
       app.innerHTML = `<div class="card"><h1>${t("lessonNotFound")}</h1><p>${t("lessonMissingFromManifest")}</p><button type="button" class="btn" data-route="dashboard">${t("home")}</button></div>`;
       app.querySelector("[data-route]").addEventListener("click", handleRoute);
+      if (!preserveScroll) scrollToTop();
       return;
     }
+    trackManualScrollDuringLessonLoad(preserveScroll);
+    if (!preserveScroll) scrollToTop();
     const lessonIndex = manifest.lessons.findIndex(item => item.id === lessonId);
     const lessonDay = lesson.id.split("-d")[1] || "";
     const previousLesson = lessonIndex > 0 ? manifest.lessons[lessonIndex - 1] : null;
     const nextLesson = lessonIndex >= 0 && lessonIndex < manifest.lessons.length - 1 ? manifest.lessons[lessonIndex + 1] : null;
     const courseBaseUrl = new URL("./courses/canva-gemini/", document.baseURI);
     const lessonUrl = new URL(lesson.src, courseBaseUrl).href;
+    lessonFrame = null;
     app.innerHTML = `<div class="lesson-loading card" role="status" aria-live="polite" aria-busy="true">
       <span class="loading-spinner" aria-hidden="true"></span>
       <span>${t("loadingLesson", { title: `<strong>${escapeHtml(lesson.title)}</strong>` })}</span>
@@ -206,6 +438,7 @@ export function createCourseViews({
     }
     if (renderSequence !== lessonRenderSequence) return;
     if (!lessonExists) {
+      detachLessonScrollTracking();
       app.innerHTML = `<div class="card"><h1>${t("unableToLoadLesson")}</h1><p>${t("retryLessonDescription", { title: escapeHtml(lesson.title) })}</p><div class="lesson-load-actions"><button type="button" class="btn" data-route="week" data-week="w${lesson.weekNumber}">${t("backToWeek", { number: lesson.weekNumber })}</button><button type="button" class="btn btn-primary" id="retryLessonButton">${t("retry")}</button></div></div>`;
       app.querySelector("[data-route]").addEventListener("click", handleRoute);
       document.getElementById("retryLessonButton").addEventListener("click", () => {
@@ -218,41 +451,31 @@ export function createCourseViews({
     lessonFrame.title = lesson.title;
     lessonFrame.dataset.lessonId = lesson.id;
     lessonFrame.sandbox = "allow-scripts allow-same-origin";
+    lessonFrame.allow = "clipboard-write";
     lessonFrame.referrerPolicy = "strict-origin";
     lessonFrame.addEventListener("load", () => {
       if (renderSequence !== lessonRenderSequence || !lessonFrame?.contentWindow) return;
       const loadingOverlay = app.querySelector(".lesson-frame-loading");
       loadingOverlay?.setAttribute("hidden", "");
       app.querySelector(".lesson-frame-wrap")?.setAttribute("aria-busy", "false");
-      lessonFrame.contentDocument.documentElement.dataset.theme = document.documentElement.dataset.theme;
-      const progress = getProgress();
-      const checklist = {};
-      (lesson.checklistIds || []).forEach(id => {
-        checklist[id] = !!progress.checklist[id];
-      });
-      const data = {
-        checklist,
-        notes: progress.notes[lessonId] || "",
-        completed: progress.completedLessons.includes(lessonId) || !!progress.lessonsDone[lessonId],
-        date: typeof progress.lessonsDone[lessonId] === "string" ? progress.lessonsDone[lessonId] : ""
-      };
-      lessonFrame.contentWindow.postMessage({ type: "LOAD_LESSON_PROGRESS", lessonId, data }, window.location.origin);
+      if (lessonFrame.contentDocument?.documentElement) {
+        lessonFrame.contentDocument.documentElement.dataset.theme = document.documentElement.dataset.theme;
+      }
+      sendLessonProgress(lessonId);
+      syncLessonFrameHeight(lessonFrame);
+      keepLessonAtTopIfUnscrolled();
+      requestAnimationFrame(keepLessonAtTopIfUnscrolled);
     });
     lessonFrame.src = lessonUrl;
     app.innerHTML = `<div class="lesson-shell">
-      <div class="lesson-toolbar">
-        ${previousLesson ? `<button type="button" class="btn btn-sm" data-route="lesson" data-id="${escapeHtml(previousLesson.id)}">${t("previousLesson")}</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">${t("week", { number: lesson.weekNumber })}</button>`}
-        <div class="lesson-toolbar-title"><strong>${escapeHtml(lesson.title)}</strong><span>${t("lessonPosition", { current: lessonIndex + 1, total: manifest.lessons.length, week: lesson.weekNumber, day: lessonDay })}</span></div>
-        <details class="lesson-jump-menu">
-          <summary class="btn btn-sm">${t("lessonSections")} ${UI_ICONS.chevronDown}</summary>
-          <div class="lesson-jump-options">
-            <button type="button" data-lesson-jump="Hướng dẫn thực hành từng bước">${t("jumpPractice")}</button>
-            <button type="button" data-lesson-jump="Bài tập thực hành &amp; Sản phẩm đầu ra">${t("jumpExercises")}</button>
-            <button type="button" data-lesson-jump="Checklist hoàn thành đo lường được">${t("jumpChecklist")}</button>
-          </div>
-        </details>
-        ${nextLesson ? `<button type="button" class="btn btn-sm btn-primary" data-route="lesson" data-id="${escapeHtml(nextLesson.id)}">${t("nextLessonButton")}</button>` : `<button type="button" class="btn btn-sm" data-route="week" data-week="w${lesson.weekNumber}">${t("finishCourse")}</button>`}
-      </div>
+      <div class="lesson-toolbar">${buildLessonToolbarInnerHtml({
+        lesson,
+        lessonIndex,
+        totalLessons: manifest.lessons.length,
+        lessonDay,
+        previousLesson,
+        nextLesson
+      })}</div>
       <div class="lesson-frame-wrap" aria-busy="true">
         <div class="lesson-frame-loading" role="status" aria-live="polite">
           <span class="loading-spinner" aria-hidden="true"></span>
@@ -264,27 +487,10 @@ export function createCourseViews({
     lessonShell.querySelector(".lesson-frame-wrap").appendChild(lessonFrame);
     const endCard = document.createElement("section");
     endCard.className = "card lesson-end-card";
-    endCard.innerHTML = nextLesson
-      ? `<div><span class="eyebrow">${t("nextStep")}</span><h2>${t("afterLesson")}</h2><p>${escapeHtml(nextLesson.title)}</p></div><button type="button" class="btn btn-primary" data-route="lesson" data-id="${escapeHtml(nextLesson.id)}">${t("goToNextLesson")} <span aria-hidden="true">→</span></button>`
-      : `<div><span class="eyebrow">${t("lastLesson")}</span><h2>${t("endOfRoadmap")}</h2><p>${t("finishChecklist")}</p></div><button type="button" class="btn btn-primary" data-route="dashboard">${t("backToRoadmap")} <span aria-hidden="true">→</span></button>`;
+    endCard.innerHTML = buildLessonEndCardInnerHtml({ nextLesson });
     lessonShell.appendChild(endCard);
-    app.querySelectorAll("[data-route]").forEach(button => button.addEventListener("click", handleRoute));
-    app.querySelectorAll("[data-lesson-jump]").forEach(button => button.addEventListener("click", () => {
-      const targetTitle = button.dataset.lessonJump;
-      const headings = [...lessonFrame.contentDocument.querySelectorAll("body > .card > h2")];
-      const targetHeading = headings.find(heading => heading.textContent.trim() === targetTitle);
-      const target = targetHeading?.closest(".card");
-      if (!target || !targetHeading) return;
-      const frameTop = lessonFrame.getBoundingClientRect().top + window.scrollY;
-      const targetTop = target.getBoundingClientRect().top;
-      const toolbarOffset = document.querySelector(".topbar").getBoundingClientRect().height +
-        app.querySelector(".lesson-toolbar").getBoundingClientRect().height + 12;
-      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      window.scrollTo({ top: Math.max(0, frameTop + targetTop - toolbarOffset), behavior: reduceMotion ? "auto" : "smooth" });
-      app.querySelector(".lesson-jump-menu").open = false;
-      targetHeading.tabIndex = -1;
-      targetHeading.focus({ preventScroll: true });
-    }));
+    keepLessonAtTopIfUnscrolled();
+    attachLessonShellListeners(app);
   }
 
   function renderPortfolio() {
@@ -296,11 +502,11 @@ export function createCourseViews({
     app.innerHTML = `
       <div class="card">
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h1>${t("learningPortfolio")}</h1><button type="button" class="btn btn-primary" id="addPortfolio">${t("addProduct")}</button></div>
-        <div style="display:flex;gap:8px;margin-bottom:12px">
+        <div class="portfolio-filters">
           <select id="pfWeekFilter"><option value="all">${t("allWeeks")}</option>${Array.from({length:8},(_,i)=>`<option value="w${i+1}" ${weekFilter===`w${i+1}`?"selected":""}>${t("week", { number: i + 1 })}</option>`).join("")}</select>
           <select id="pfLessonFilter"><option value="all">${t("allLessons")}</option>${manifest.lessons.map(lesson=>`<option value="${escapeHtml(lesson.id)}" ${lessonFilter===lesson.id?"selected":""}>${escapeHtml(lesson.title)}</option>`).join("")}</select>
         </div>
-        ${items.length ? items.map(item=>`<div class="portfolio-item"><div style="flex:1"><strong>${escapeHtml(item.title)}</strong><div style="font-size:13px;color:var(--muted);margin-top:3px">${escapeHtml(item.lessonId)} · ${escapeHtml(item.date)}</div>${item.link?`<div><a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">${t("openLink")}</a></div>`:""}${item.note?`<p>${escapeHtml(item.note)}</p>`:""}</div><div style="display:flex;gap:6px"><button type="button" class="btn btn-sm" data-edit-pf="${escapeHtml(item.id)}">${t("edit")}</button><button type="button" class="btn btn-sm btn-danger" data-del-pf="${escapeHtml(item.id)}">${t("delete")}</button></div></div>`).join("") : `<p>${t("noPortfolioItems")}</p>`}
+        ${items.length ? items.map(item=>`<div class="portfolio-item"><div style="flex:1;min-width:0;overflow-wrap:anywhere"><strong>${escapeHtml(item.title)}</strong><div style="font-size:13px;color:var(--muted);margin-top:3px">${escapeHtml(item.lessonId)} · ${escapeHtml(item.date)}</div>${item.link?`<div><a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">${t("openLink")}</a></div>`:""}${item.note?`<p>${escapeHtml(item.note)}</p>`:""}</div><div style="display:flex;gap:6px;flex:0 0 auto;align-items:flex-start"><button type="button" class="btn btn-sm" data-edit-pf="${escapeHtml(item.id)}">${t("edit")}</button><button type="button" class="btn btn-sm btn-danger" data-del-pf="${escapeHtml(item.id)}">${t("delete")}</button></div></div>`).join("") : `<p>${t("noPortfolioItems")}</p>`}
       </div>
     `;
     document.getElementById("addPortfolio").addEventListener("click", () => openPortfolioModal());
@@ -310,7 +516,7 @@ export function createCourseViews({
     app.querySelectorAll("[data-del-pf]").forEach(button => button.addEventListener("click", () => deletePortfolio(button.dataset.delPf)));
   }
 
-  function route() {
+  function route({ preserveScroll = false } = {}) {
     const manifest = getManifest();
     if (!manifest) return;
     const renderSequence = ++lessonRenderSequence;
@@ -318,19 +524,48 @@ export function createCourseViews({
     const hash = location.hash || "#course/canva-gemini/dashboard";
     const lessonMatch = /^#course\/canva-gemini\/lesson\/([^/?]+)/.exec(hash);
     const weekMatch = /^#course\/canva-gemini\/week\/([^/?]+)/.exec(hash);
+    if (!lessonMatch) {
+      lessonFrame = null;
+      detachLessonScrollTracking();
+    }
+    if (!preserveScroll) scrollToTop();
     if (hash.includes("/portfolio")) renderPortfolio();
-    else if (lessonMatch) void renderLesson(decodeURIComponent(lessonMatch[1]), renderSequence);
+    else if (lessonMatch) void renderLesson(decodeURIComponent(lessonMatch[1]), renderSequence, { preserveScroll });
     else if (weekMatch) renderWeek(decodeURIComponent(weekMatch[1]));
     else renderDashboard();
     renderSidebar();
+  }
+
+  if (typeof document.addEventListener === "function") {
+    document.addEventListener("click", event => {
+      const jumpMenu = app.querySelector?.(".lesson-jump-menu[open]");
+      if (!jumpMenu) return;
+      if (!(event.target instanceof Node) || !jumpMenu.contains(event.target)) {
+        jumpMenu.open = false;
+      }
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      if (document.querySelector?.(".modal-backdrop.open")) return;
+      const jumpMenu = app.querySelector?.(".lesson-jump-menu[open]");
+      if (!jumpMenu) return;
+      event.preventDefault();
+      jumpMenu.open = false;
+      jumpMenu.querySelector("summary")?.focus({ preventScroll: true });
+    });
   }
 
   return {
     getLessonById,
     getLessonFrame: () => lessonFrame,
     handleRoute,
+    notifyLessonSaveStatus,
+    onLessonFrameResize: keepLessonAtTopIfUnscrolled,
+    refreshActiveLessonLocale,
     renderPortfolio,
     renderSidebar,
-    route
+    route,
+    sendLessonProgress,
+    syncLessonUi
   };
 }

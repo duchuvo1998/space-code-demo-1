@@ -18,6 +18,7 @@ import {
   saveProgressState,
   saveWelcomeChoice
 } from "../progress/progress-storage.mjs";
+import { mergeImportedProgress, validateImportedData as validateImportedProgress } from "../progress/progress-import.mjs";
 import { UI_ICONS } from "../ui/ui-icons.mjs";
 
 const WRITE_DELAY = 700;
@@ -29,6 +30,7 @@ let courseViews = null;
 const storedProgress = loadProgressState();
 let state = storedProgress.state;
 let saveTimer = null;
+let saveStatusHideTimer = null;
 let storageAvailable = storedProgress.available;
 let searchQuery = "";
 let firebaseSync = null;
@@ -66,8 +68,20 @@ function renderPortfolio() {
   courseViews?.renderPortfolio();
 }
 
-function route() {
-  courseViews?.route();
+function route(options) {
+  courseViews?.route(options);
+}
+
+function syncViewAfterExternalProgressUpdate() {
+  applyTheme();
+  const lessonFrame = courseViews?.getLessonFrame();
+  const activeLessonMatch = /^#course\/canva-gemini\/lesson\/([^/?]+)/.exec(location.hash);
+  if (lessonFrame && activeLessonMatch && lessonFrame.dataset.lessonId === decodeURIComponent(activeLessonMatch[1])) {
+    courseViews.sendLessonProgress(lessonFrame.dataset.lessonId);
+    renderSidebar();
+    return;
+  }
+  route({ preserveScroll: true });
 }
 
 function applyTheme() {
@@ -178,18 +192,35 @@ function applySyncedProgress(baseProgress, localProgress, syncedProgress) {
 
 function refreshProgressView() {
   renderSidebar();
-  if (!location.hash || /\/(dashboard|portfolio|week\/)/.test(location.hash)) route();
+  if (!location.hash || /\/(dashboard|portfolio|week\/)/.test(location.hash)) {
+    route({ preserveScroll: true });
+  }
 }
 
 function scheduleSave() {
   clearTimeout(saveTimer);
+  clearTimeout(saveStatusHideTimer);
+  const localSaved = saveLocalState();
   document.getElementById("saveStatus").textContent = t("saving");
   const syncStatus = document.getElementById("syncStatus");
   if (syncStatus) syncStatus.textContent = t("saving");
   document.getElementById("saveStatus").classList.add("show");
+  courseViews?.notifyLessonSaveStatus(localSaved ? "saving" : "error");
   saveTimer = setTimeout(() => {
+    saveTimer = null;
     void saveProgress();
   }, WRITE_DELAY);
+  return localSaved;
+}
+
+function flushPendingSave() {
+  if (!saveTimer) return;
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  saveLocalState();
+  if (firebaseSync?.currentUser) {
+    void saveProgress();
+  }
 }
 
 function saveProgress() {
@@ -208,12 +239,20 @@ function saveProgress() {
   return activeSavePromise;
 }
 
+function scheduleHideSaveStatus() {
+  clearTimeout(saveStatusHideTimer);
+  saveStatusHideTimer = setTimeout(() => {
+    document.getElementById("saveStatus").classList.remove("show");
+  }, 1800);
+}
+
 async function saveProgressOnce() {
   const localSaved = saveLocalState();
   if (!firebaseSync?.currentUser) {
     updateAccountUi();
     document.getElementById("saveStatus").textContent = formatSaveStatus(localSaved);
-    setTimeout(() => document.getElementById("saveStatus").classList.remove("show"), 1800);
+    courseViews?.notifyLessonSaveStatus(localSaved ? "saved" : "error");
+    scheduleHideSaveStatus();
     return;
   }
 
@@ -238,15 +277,17 @@ async function saveProgressOnce() {
     else syncError = "";
     updateAccountUi();
     document.getElementById("saveStatus").textContent = formatSaveStatus(localSaved);
+    courseViews?.notifyLessonSaveStatus(localSaved ? "saved" : "error");
   } catch (error) {
     syncError = error instanceof Error ? error.message : t("unknownError");
     updateAccountUi();
     document.getElementById("saveStatus").textContent = localSaved
       ? t("savedBrowserSyncError")
       : t("unableToSaveProgress");
+    courseViews?.notifyLessonSaveStatus(localSaved ? "saved" : "error");
     showToast(t("firebaseSyncFailed", { error: syncError }));
   }
-  setTimeout(() => document.getElementById("saveStatus").classList.remove("show"), 1800);
+  scheduleHideSaveStatus();
 }
 
 window.courseAppHooks = {
@@ -284,8 +325,7 @@ async function initializeFirebaseSync() {
         };
         saveLocalState();
         await saveProgress();
-        applyTheme();
-        route();
+        syncViewAfterExternalProgressUpdate();
       }
       else syncError = "";
     } catch (error) {
@@ -348,8 +388,7 @@ async function handleAccountAction(button) {
         progress: applySyncedProgress(initialProgress, getProgress(), syncedProgress)
       };
       saveLocalState();
-      applyTheme();
-      route();
+      syncViewAfterExternalProgressUpdate();
     }
     if (replacingResetProgress) clearCloudReset();
     syncError = "";
@@ -399,8 +438,9 @@ function openPortfolioModal(editId) {
     }
   } else {
     document.getElementById("portfolioForm").reset();
+    document.getElementById("pfDate").value = todayISO();
   }
-  modal.classList.add("open");
+  dialogs.openDialog(modal, { initialFocus: () => document.getElementById("pfLesson") });
 }
 
 function refreshPortfolioModalLocale() {
@@ -414,8 +454,8 @@ function refreshPortfolioModalLocale() {
   document.getElementById("portfolioModalTitle").textContent = t(isEditing ? "editPortfolioTitle" : "addPortfolioTitle");
 }
 
-function closePortfolioModal() {
-  document.getElementById("portfolioModal").classList.remove("open");
+function closePortfolioModal(options) {
+  dialogs.closeDialog(document.getElementById("portfolioModal"), options);
 }
 
 function deletePortfolio(id) {
@@ -440,48 +480,23 @@ function closeMobileMenu() {
   menuToggle.setAttribute("aria-label", t("openNavigation"));
 }
 
-function closeToolsMenu() {
-  if (!window.matchMedia("(min-width: 1440px)").matches) {
-    document.getElementById("topbarTools").open = false;
+function closeToolsMenu({ restoreFocus = false } = {}) {
+  const topbarTools = document.getElementById("topbarTools");
+  if (!window.matchMedia("(min-width: 1560px)").matches && topbarTools.open) {
+    const hadFocus = topbarTools.contains(document.activeElement);
+    topbarTools.open = false;
+    if (restoreFocus && hadFocus) {
+      topbarTools.querySelector("summary")?.focus({ preventScroll: true });
+    }
   }
-}
-
-function getKnownLessonIds() {
-  return new Set(manifest.lessons.map(lesson => lesson.id));
 }
 
 function validateImportedData(parsed) {
-  if (!isObject(parsed)) return false;
-  const progress = parsed.schemaVersion === 1 && isObject(parsed.progress) ? parsed.progress : parsed;
-  if (progress.checklist && !isObject(progress.checklist)) return false;
-  if (progress.notes && !isObject(progress.notes)) return false;
-  if (progress.portfolio && !Array.isArray(progress.portfolio)) return false;
-  const known = getKnownLessonIds();
-  const knownChecks = new Set(manifest.lessons.flatMap(lesson => lesson.checklistIds || []));
-  for (const id of Object.keys(progress.checklist || {})) if (!knownChecks.has(id)) return false;
-  for (const id of Object.keys(progress.notes || {})) if (!known.has(id)) return false;
-  for (const id of Object.keys(progress.lessonsDone || {})) if (!known.has(id)) return false;
-  for (const id of progress.completedLessons || []) if (!known.has(id)) return false;
-  for (const item of progress.portfolio || []) {
-    if (!isObject(item)) return false;
-    if (item.link && !/^https?:\/\//i.test(item.link)) return false;
-    if (item.lessonId && !known.has(item.lessonId)) return false;
-  }
-  return true;
+  return validateImportedProgress(parsed, manifest);
 }
 
 function mergeImportedData(parsed) {
-  const progress = parsed.schemaVersion === 1 && isObject(parsed.progress) ? parsed.progress : parsed;
-  const normalized = { ...getProgress(), ...progress };
-  normalized.checklist = isObject(progress.checklist) ? progress.checklist : getProgress().checklist;
-  normalized.notes = isObject(progress.notes) ? progress.notes : getProgress().notes;
-  normalized.portfolio = Array.isArray(progress.portfolio) ? progress.portfolio : getProgress().portfolio;
-  normalized.lessonsDone = isObject(progress.lessonsDone) ? progress.lessonsDone : getProgress().lessonsDone;
-  normalized.completedLessons = Array.isArray(progress.completedLessons)
-    ? progress.completedLessons
-    : Object.keys(normalized.lessonsDone);
-  normalized.theme = ["light","dark"].includes(progress.theme) ? progress.theme : getProgress().theme;
-  state = { ...state, ...parsed, schemaVersion: 1, progress: normalized };
+  state = mergeImportedProgress(parsed, getProgress());
 }
 
 window.addEventListener("message", event => {
@@ -494,8 +509,17 @@ window.addEventListener("message", event => {
   if (event.data.lessonId !== lessonFrame.dataset.lessonId) return;
 
   if (event.data.type === "LESSON_RESIZE") {
-    if (!Number.isFinite(event.data.height) || event.data.height < 320 || event.data.height > 200000) return;
+    if (!Number.isFinite(event.data.height) || event.data.height < 200 || event.data.height > 200000) return;
     lessonFrame.style.height = `${Math.ceil(event.data.height)}px`;
+    courseViews?.onLessonFrameResize?.();
+    return;
+  }
+  if (event.data.type === "LESSON_READY") {
+    courseViews?.sendLessonProgress(event.data.lessonId);
+    return;
+  }
+  if (event.data.type === "LESSON_COPY_PROMPT") {
+    showToast(t(event.data.copied ? "copiedPromptToast" : "copyPromptFailed"));
     return;
   }
   if (event.data.type !== "LESSON_PROGRESS") return;
@@ -547,18 +571,40 @@ async function init() {
   updateStorageBanner();
   route();
 
-  window.addEventListener("hashchange", route);
+  window.addEventListener("hashchange", () => route());
+  window.addEventListener("pagehide", flushPendingSave);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushPendingSave();
+  });
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
-  document.getElementById("brandButton").addEventListener("click", () => { location.hash = "#course/canva-gemini/dashboard"; });
+  document.querySelector(".skip-link")?.addEventListener("click", event => {
+    event.preventDefault();
+    const mainContent = document.getElementById("mainContent");
+    if (!mainContent) return;
+    mainContent.focus({ preventScroll: true });
+    mainContent.scrollIntoView({ block: "start" });
+  });
+  document.getElementById("brandButton").addEventListener("click", () => {
+    document.getElementById("searchResults")?.remove();
+    const dashboardHash = "#course/canva-gemini/dashboard";
+    if (location.hash === dashboardHash) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } else {
+      location.hash = dashboardHash;
+    }
+  });
   document.getElementById("menuToggle").addEventListener("click", () => {
     const isOpen = sidebar.classList.toggle("open");
     document.getElementById("drawerBackdrop").classList.toggle("open", isOpen);
     const menuToggle = document.getElementById("menuToggle");
     menuToggle.setAttribute("aria-expanded", String(isOpen));
     menuToggle.setAttribute("aria-label", t(isOpen ? "closeNavigation" : "openNavigation"));
+    if (isOpen) {
+      sidebar.querySelector("button, a")?.focus();
+    }
   });
   const topbarTools = document.getElementById("topbarTools");
-  const wideToolbar = window.matchMedia("(min-width: 1440px)");
+  const wideToolbar = window.matchMedia("(min-width: 1560px)");
   const syncToolsLayout = () => {
     topbarTools.open = wideToolbar.matches;
   };
@@ -570,19 +616,35 @@ async function init() {
     }
   });
   document.addEventListener("keydown", event => {
-    if (event.key !== "Escape" || !topbarTools.open || wideToolbar.matches) return;
+    if (event.key !== "Escape") return;
+    if (document.querySelector(".modal-backdrop.open")) return;
+    if (sidebar.classList.contains("open")) {
+      closeMobileMenu();
+      document.getElementById("menuToggle").focus();
+      return;
+    }
+    const searchResults = document.getElementById("searchResults");
+    if (searchResults) {
+      const returnToSearch = searchResults.contains(document.activeElement);
+      searchResults.remove();
+      if (returnToSearch) document.getElementById("globalSearch")?.focus({ preventScroll: true });
+      return;
+    }
+    if (!topbarTools.open || wideToolbar.matches) return;
     closeToolsMenu();
     topbarTools.querySelector("summary").focus();
   });
   document.querySelectorAll("[data-locale]").forEach(button => button.addEventListener("click", async event => {
     await setLocale(event.currentTarget.dataset.locale);
-    closeToolsMenu();
+    closeToolsMenu({ restoreFocus: true });
     refreshPortfolioModalLocale();
     const menuToggle = document.getElementById("menuToggle");
     menuToggle.setAttribute("aria-label", t(sidebar.classList.contains("open") ? "closeNavigation" : "openNavigation"));
     updateAccountUi();
     updateStorageBanner();
-    route();
+    if (!courseViews?.refreshActiveLessonLocale?.()) {
+      route({ preserveScroll: true });
+    }
   }));
   document.getElementById("drawerBackdrop").addEventListener("click", closeMobileMenu);
   document.getElementById("themeButton").addEventListener("click", () => {
@@ -591,7 +653,7 @@ async function init() {
     progress.theme = current === "dark" ? "light" : "dark";
     applyTheme();
     scheduleSave();
-    closeToolsMenu();
+    closeToolsMenu({ restoreFocus: true });
   });
   document.getElementById("accountButton").addEventListener("click", event => {
     void handleAccountAction(event.currentTarget);
@@ -617,7 +679,7 @@ async function init() {
     anchor.click();
     URL.revokeObjectURL(url);
     showToast(t("exportedJson"));
-    closeToolsMenu();
+    closeToolsMenu({ restoreFocus: true });
   });
   document.getElementById("importButton").addEventListener("click", () => {
     closeToolsMenu();
@@ -631,9 +693,9 @@ async function init() {
       if (!validateImportedData(parsed)) throw new Error(t("invalidImport"));
       mergeImportedData(parsed);
       applyTheme();
-      scheduleSave();
+      const saved = scheduleSave();
       route();
-      showToast(t("importedProgress"));
+      showToast(t(saved ? "importedProgress" : "unableToSaveProgress"));
     } catch (error) {
       showToast(error.message || t("invalidJsonFile"));
     } finally {
@@ -645,13 +707,19 @@ async function init() {
     event.preventDefault();
     const editId = document.getElementById("pfEditId").value;
     const lessonId = document.getElementById("pfLesson").value;
-    const title = document.getElementById("pfTitle").value.trim();
+    const titleInput = document.getElementById("pfTitle");
+    const title = titleInput.value.trim();
     const link = document.getElementById("pfLink").value.trim();
     if (link && !/^https?:\/\//i.test(link)) {
       showToast(t("invalidLink"));
       return;
     }
-    if (!title) return;
+    if (!title) {
+      titleInput.value = "";
+      titleInput.reportValidity?.();
+      titleInput.focus();
+      return;
+    }
     const progress = getProgress();
     const item = {
       id: editId || `pf-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
@@ -663,24 +731,33 @@ async function init() {
     };
     if (editId) progress.portfolio = progress.portfolio.map(existing => existing.id === editId ? item : existing);
     else progress.portfolio.push(item);
-    closePortfolioModal();
+    closePortfolioModal({ restoreFocus: false });
     scheduleSave();
     renderSidebar();
     renderPortfolio();
+    const nextFocus = editId
+      ? app.querySelector(`[data-edit-pf="${CSS.escape(item.id)}"]`) || document.getElementById("addPortfolio")
+      : document.getElementById("addPortfolio");
+    nextFocus?.focus({ preventScroll: true });
   });
-  document.getElementById("cancelPortfolio").addEventListener("click", closePortfolioModal);
+  document.getElementById("cancelPortfolio").addEventListener("click", () => closePortfolioModal());
   document.getElementById("resetButton").addEventListener("click", () => {
     closeToolsMenu();
-    document.getElementById("resetModal").classList.add("open");
+    dialogs.openDialog(document.getElementById("resetModal"), {
+      initialFocus: () => document.getElementById("cancelReset")
+    });
   });
-  document.getElementById("cancelReset").addEventListener("click", () => document.getElementById("resetModal").classList.remove("open"));
+  document.getElementById("cancelReset").addEventListener("click", () => {
+    dialogs.closeDialog(document.getElementById("resetModal"));
+  });
   document.getElementById("confirmReset").addEventListener("click", () => {
     state = { ...state, schemaVersion: 1, progress: createDefaultProgress() };
     if (firebaseSync?.currentUser) markCloudReset(firebaseSync.currentUser.uid);
     applyTheme();
     scheduleSave();
-    document.getElementById("resetModal").classList.remove("open");
+    dialogs.closeDialog(document.getElementById("resetModal"), { restoreFocus: false });
     route();
+    document.getElementById("mainContent")?.focus({ preventScroll: true });
   });
 
   document.getElementById("globalSearch").addEventListener("input", event => {

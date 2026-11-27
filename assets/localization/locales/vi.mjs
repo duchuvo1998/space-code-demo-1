@@ -91,6 +91,7 @@ export default {
   lessonNotFound: "Không tìm thấy bài học",
   lessonMissingFromManifest: "Bài học không tồn tại trong danh sách khóa học.",
   home: "Về trang chủ",
+  brandHomeAria: "Canva + Gemini 8 Tuần — Về trang chủ",
   loadingLesson: "Đang tải bài học: {title}",
   unableToLoadLesson: "Không thể tải bài học",
   retryLessonDescription: "Chưa tải được {title}. Hãy kiểm tra kết nối rồi thử lại.",
@@ -159,5 +160,14 @@ export default {
   invalidJsonFile: "Tệp JSON không hợp lệ.",
   invalidLink: "Liên kết phải bắt đầu bằng http hoặc https.",
   searchResults: "Kết quả tìm kiếm",
-  noSearchResults: "Không tìm thấy bài học hoặc thuật ngữ."
+  noSearchResults: "Không tìm thấy bài học hoặc thuật ngữ.",
+  copyPrompt: "Sao chép",
+  copyPromptAria: "Sao chép mẫu prompt",
+  copiedPrompt: "Đã sao chép",
+  copiedPromptToast: "Đã sao chép mẫu prompt.",
+  copyPromptFailed: "Không thể tự sao chép. Hãy nhấn Ctrl+C hoặc Cmd+C.",
+  notesAutoSave: "Tự động lưu trên trình duyệt",
+  notesSaving: "Đang lưu ghi chú...",
+  notesSaved: "Đã lưu ghi chú",
+  notesSaveError: "Không thể lưu ghi chú"
 };

@@ -70,8 +70,11 @@ web_modules/
 .env.*
 !.env.example
 oauth*.txt
-oauth*.sh
+*oauth*.sh
 oauth.log
+
+# Local agent progress checkpoints
+/progress/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
