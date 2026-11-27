@@ -477,12 +477,22 @@ test("locales maintain matching keys and shell accessibility/responsive rules st
 
   const indexHtml = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
   assert.match(indexHtml, /id="brandButton"[^>]*data-i18n-aria-label="brandHomeAria"/);
+  assert.match(indexHtml, /class="brand-home-badge"/);
   assert.match(indexHtml, /id="portfolioModal"[^>]*tabindex="-1"/);
   assert.match(indexHtml, /id="resetModal"[^>]*tabindex="-1"/);
+  assert.match(indexHtml, /id="syncConflictModal"[^>]*tabindex="-1"/);
+  assert.match(indexHtml, /id="signOutModal"[^>]*tabindex="-1"/);
+  assert.match(indexHtml, /id="syncStatus"[^>]*aria-live="polite"/);
+  assert.match(indexHtml, /id="accountMenuPanel"[^>]*role="menu"/);
+  assert.match(indexHtml, /id="accountMenuStats"/);
+  assert.match(indexHtml, /id="signInMenuButton"[^>]*role="menuitem"/);
 
   const css = fs.readFileSync(path.join(ROOT, "assets/style.css"), "utf8");
   assert.match(css, /\[hidden\]\s*\{\s*display:\s*none\s*!important;\s*\}/);
   assert.match(css, /\.topbar-actions\s+\.topbar-tools\s*>\s*summary\s*\{\s*display:\s*none;\s*\}/);
+  assert.match(css, /\.sync-status\[data-state="error"\]/);
+  assert.match(css, /\.btn:disabled/);
+  assert.match(css, /\.topbar-actions\s+\.account-trigger\s*\{[^}]*min-width:\s*44px;/);
   assert.match(css, /\.search-results\s*\{[^}]*position:\s*fixed;/);
   assert.match(css, /body\.lesson-page\s*\{[^}]*overflow-wrap:\s*anywhere;/);
   assert.match(css, /summary:focus-visible/);

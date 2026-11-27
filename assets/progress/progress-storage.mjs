@@ -1,6 +1,7 @@
 export const PROGRESS_STORAGE_KEY = "canva-gemini-course:v1";
 export const WELCOME_CHOICE_STORAGE_KEY = `${PROGRESS_STORAGE_KEY}:welcome-choice`;
 export const CLOUD_RESET_STORAGE_KEY = `${PROGRESS_STORAGE_KEY}:firebase-reset-uid`;
+export const LAST_SYNCED_UID_STORAGE_KEY = `${PROGRESS_STORAGE_KEY}:firebase-last-uid`;
 
 const MAX_PROGRESS_BYTES = 900000;
 
@@ -141,6 +142,36 @@ export function loadWelcomeChoice(storage) {
 export function saveWelcomeChoice(storage) {
   try {
     (storage ?? globalThis.localStorage).setItem(WELCOME_CHOICE_STORAGE_KEY, "1");
+    return { saved: true, error: null };
+  } catch (error) {
+    return { saved: false, error };
+  }
+}
+
+export function loadLastSyncedUid(storage) {
+  try {
+    return {
+      uid: (storage ?? globalThis.localStorage).getItem(LAST_SYNCED_UID_STORAGE_KEY) || "",
+      available: true,
+      error: null
+    };
+  } catch (error) {
+    return { uid: "", available: false, error };
+  }
+}
+
+export function saveLastSyncedUid(uid, storage) {
+  try {
+    (storage ?? globalThis.localStorage).setItem(LAST_SYNCED_UID_STORAGE_KEY, uid);
+    return { saved: true, error: null };
+  } catch (error) {
+    return { saved: false, error };
+  }
+}
+
+export function clearLastSyncedUid(storage) {
+  try {
+    (storage ?? globalThis.localStorage).removeItem(LAST_SYNCED_UID_STORAGE_KEY);
     return { saved: true, error: null };
   } catch (error) {
     return { saved: false, error };
