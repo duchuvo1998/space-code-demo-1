@@ -12,7 +12,7 @@
   <header class="topbar">
     <div class="topbar-left">
       <button type="button" class="btn btn-icon menu-toggle" id="menuToggle" aria-label="Mở menu điều hướng" data-i18n-aria-label="openNavigation" aria-controls="sidebar" aria-expanded="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-      <button type="button" class="brand" id="brandButton">
+      <button type="button" class="brand" id="brandButton" aria-label="Canva + Gemini 8 Tuần — Về trang chủ" data-i18n-aria-label="brandHomeAria" title="Về trang chủ" data-i18n-title="home">
         <span class="brand-dot" aria-hidden="true"></span>
         <span class="brand-text">Canva + Gemini 8 Tuần</span>
       </button>
@@ -57,7 +57,7 @@
     </main>
   </div>
 
-  <div class="modal-backdrop" id="portfolioModal" role="dialog" aria-modal="true" aria-labelledby="portfolioModalTitle">
+  <div class="modal-backdrop" id="portfolioModal" role="dialog" aria-modal="true" aria-labelledby="portfolioModalTitle" tabindex="-1">
     <div class="modal">
       <h2 id="portfolioModalTitle" data-i18n="addPortfolioTitle">Thêm sản phẩm vào Hồ sơ học tập</h2>
       <form id="portfolioForm">
@@ -122,7 +122,7 @@
     </div>
   </div>
 
-  <div class="modal-backdrop" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+  <div class="modal-backdrop" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle" tabindex="-1">
     <div class="modal">
       <h2 id="resetModalTitle" data-i18n="resetTitle">Đặt lại toàn bộ tiến độ?</h2>
       <p><span data-i18n="resetDescription">Thao tác này sẽ xóa toàn bộ mục checklist đã đánh dấu, trạng thái hoàn thành bài học, ghi chú cá nhân và Hồ sơ học tập trên trình duyệt này; nếu đã đăng nhập Google, tiến độ trên tài khoản đó cũng sẽ được đặt lại. Bạn nên</span> <strong data-i18n="exportJson">Xuất JSON</strong> <span data-i18n="resetBackupSuggestion">để sao lưu trước khi đặt lại.</span></p>

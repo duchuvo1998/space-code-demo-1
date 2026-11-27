@@ -54,15 +54,20 @@
       checklist.innerHTML=LESSON_DATA.checklist.map(c=>'<label class="check-item"><input type="checkbox" data-check-id="'+c.id+'"><span>'+String(c.text).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</span></label>').join("");
       render({});
       function send(){
-        window.IframeProgressBridge.sendProgress({checklist:current.checklist,notes:notes.value,completed:current.completed,date:current.date});
+        current.notes=notes.value;
+        window.IframeProgressBridge.sendProgress({checklist:current.checklist,notes:current.notes,completed:current.completed,date:current.date});
       }
       checklist.addEventListener("change",function(event){
         const input=event.target;if(!input.matches("input[type=checkbox]"))return;
         const id=input.dataset.checkId;current.checklist[id]=input.checked;
         input.closest("label").classList.toggle("checked",input.checked);send();
       });
-      notes.addEventListener("input",function(){send();});
+      function syncNotes(){current.notes=notes.value;send();}
+      notes.addEventListener("input",syncNotes);
+      notes.addEventListener("change",syncNotes);
+      notes.addEventListener("compositionend",syncNotes);
       complete.addEventListener("click",function(){
+        current.notes=notes.value;
         current.completed=!current.completed;
         if(current.completed&&!current.date){const d=new Date();current.date=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
         if(!current.completed)current.date="";render(current);send();
